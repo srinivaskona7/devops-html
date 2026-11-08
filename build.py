@@ -30,7 +30,7 @@ ENGINE = (ROOT / "engine.html").read_text()
 _ic = ENGINE.split("const IC = {")[1].split("};")[0]
 ICONS = set(re.findall(r"^\s{2}(\w+): '", _ic, re.M)) | set(re.findall(r",\s(\w+): '", _ic))
 WPS, PAD, LEAD = 2.15, 1.4, 0.35
-ORDER = ["git", "kubernetes", "docker", "linux", "shell", "python", "ansible", "terraform", "jenkins", "azure-devops",
+ORDER = ["git", "gitops", "kubernetes", "docker", "linux", "shell", "python", "ansible", "terraform", "jenkins", "azure-devops",
          "istio", "cncf", "prometheus", "grafana", "elk", "aws", "azure", "gcp"]
 SITE_URL = "https://srinivaskona7.github.io/devops-html/"
 

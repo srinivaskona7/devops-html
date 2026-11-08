@@ -450,8 +450,11 @@ function drawCompare(s, L) {
   const a0 = ease(L / 0.35);
   chip(s.phase ? `STEP ${s.pn} / ${PHASES.length}` + (s.secName ? `  ·  ${s.secName.toUpperCase()}` : '') : (s.chip || s.name).toUpperCase(), 100, 132, a0);
   title(s.title, 100, 196, 1720, a0, 58, 1);
-  const cols = s.cols, nc = cols.length, firstW = 330, cw = (1720 - firstW) / nc, rh = s.rows.length > 5 ? 66 : 78, y0 = 300;
+  // rows are either [label, ...one value per col] or, when every row has cols.length cells, a full table whose first col is the label
+  const full = s.rows.every(r => r.length === s.cols.length), cols = full ? s.cols.slice(1) : s.cols, nc = cols.length;
+  const firstW = full ? (nc >= 2 ? 520 : 760) : 330, cw = (1720 - firstW) / nc, rh = s.rows.length > 5 ? 66 : 78, y0 = 300;
   ctx.globalAlpha = a0; fillRR(100, y0, 1720, rh, 12, TH.surface2); font(700, 27); ctx.fillStyle = TH.accent; ctx.textBaseline = 'middle';
+  if (full) ctx.fillText(wrap(s.cols[0], firstW - 40, 1, 'colh')[0], 124, y0 + rh / 2);
   cols.forEach((c, k) => { const l = wrap(c, cw - 30, 1, 'colh'); ctx.fillText(l[0], 100 + firstW + k * cw + 20, y0 + rh / 2); }); ctx.globalAlpha = 1;
   const ai = activeIndex(s.rwT, L);
   s.rows.forEach((r, k) => {

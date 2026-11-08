@@ -1,3 +1,15 @@
+# GCP and Azure deep dives, new GitOps video (8 Nov 2026)
+
+| Video | Before | Now | Added |
+|---|---|---|---|
+| Azure | 29.5 min, 56 scenes | 69.6 min, 129 scenes | Networking deep dive (UDRs, ASGs, private endpoints + DNS, Virtual WAN/AVNM, Firewall Premium, Bastion, ExpressRoute, DNS Private Resolver, VNet encryption, Network Watcher, Front Door/App Gateway, DDoS), DNS, storage, SQL/PostgreSQL/Cosmos/Managed Redis, AKS Automatic and secure Standard clusters, Key Vault, Defender, Sentinel, secure architectures |
+| GCP | 29.5 min, 56 scenes | 58.5 min, 108 scenes | IAM role types, deny policies and PABs, impersonation, PAM, org policy constraints, global VPC, hierarchical firewall policies, Cloud NGFW, Cloud NAT, PSC, Shared VPC, NCC, HA VPN/Interconnect, VPC Service Controls, load balancers, Cloud Armor, IAP, Cloud DNS deep dive, Cloud Storage security, Cloud SQL/AlloyDB/Spanner, GKE security, Gateway API, KMS/Autokey, audit logs, SCC, secure architectures |
+| GitOps (new) | — | 25.1 min, 45 scenes | Principles, push vs pull, source-of-truth repo design, Kustomize/Helm, PR validation, Argo CD (Applications, AppProjects, ApplicationSets, sync waves, drift, hardening), Flux (bootstrap, sources, Kustomization impersonation, OCI HelmRelease), secrets (ESO, CSI, SOPS+KMS, Sealed Secrets, in-cluster hardening), promotion (Kargo, Image Updater), Argo Rollouts, Kyverno, cosign, threats, break-glass |
+
+Player fix: comparison tables whose rows include a label for every column now render with the header aligned to the label column (affected 80 tables across 7 videos).
+
+Sources: Azure/AKS changelog and AKS docs; Azure CLI source for flags; Terraform Google provider docs and changelog (v8.10); Argo CD docs (v3 upgrade notes, secret management); Flux docs; GitHub releases for tool versions. `az` and `gcloud` were not installed locally, so Azure and GCP command outputs are representative.
+
 # AWS deep-dive expansion (8 Nov 2026)
 
 AWS for DevOps Engineers grew from 29 to about 97 minutes (56 to 181 scenes, 175 steps). Feature facts come from the AWS What's New feed (Dec 2025 to Nov 2026); CLI syntax checked against aws-cli 2.34 help pages.
