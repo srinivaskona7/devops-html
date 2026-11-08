@@ -1,3 +1,18 @@
+# Kubernetes deep dive: 10.9 to 61 minutes (8 Nov 2026)
+
+Kubernetes from Scratch grew from 30 to 109 scenes (103 steps). Manifests shown on screen were validated with kubeconform (strict, Kubernetes 1.34 schemas plus the Gateway API CRD catalog) and `helm lint`; feature facts come from the Kubernetes 1.35, 1.36 and 1.37 changelogs. A live cluster was not available, so command output is representative.
+
+| Section | Added |
+|---|---|
+| Control plane | Component roles and failure effects, the `kubectl apply` flow, the API request path (authn, authz, admission), node components, version skew, `kubectl explain` |
+| Workloads deep | Pod phases, init containers and native sidecars, ephemeral containers, Deployment strategy knobs, rollout history, ReplicaSets, StatefulSets, DaemonSets, Jobs and CronJobs, indexed jobs, graceful shutdown with `preStop` sleep, QoS and OOMKilled, in-place pod resize (GA 1.35), image volumes and user namespaces (1.36) |
+| Networking deep | Network model, Service types, EndpointSlices and `PreferSameZone`, CoreDNS and ndots, Gateway API roles, HTTPRoute canary, ReferenceGrant, ingress-nginx archival and migration, default-deny NetworkPolicy, CNI and mesh choices |
+| Config and storage deep | ConfigMap update behaviour, Secret limits, bound service account tokens, downward API, pod certificates and ClusterTrustBundle (GA 1.37), namespace tenancy, PV/PVC/StorageClass, access modes, snapshots, ephemeral and local volumes |
+| Scheduling | Filter/score/bind, placement tools, topology spread, taints, priority, PDBs and drains, autoscaling layers, gang scheduling and DRA |
+| Security | Four Cs, authentication options, RBAC audit, Pod Security Standards, a hardened pod, CEL admission policy, Kyverno vs Gatekeeper, supply chain, runtime security, etcd protection |
+| Operations | Debug order, Pending/ImagePull/CrashLoop/OOM, logs and events, empty endpoints, `top`, diff and server-side apply, upgrades, observability, backup and DR |
+| Extending and architectures | CRDs with CEL validation, operators, Cluster API and Crossplane, Helm and Kustomize in practice, GitOps summary, production cluster, team namespace, request path, 1.35 to 1.37 what's new, checklist |
+
 # GCP and Azure deep dives, new GitOps video (8 Nov 2026)
 
 | Video | Before | Now | Added |
