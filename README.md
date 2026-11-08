@@ -1,6 +1,6 @@
 # DevOps video library
 
-Seventeen hands-on DevOps explainer videos (Kubernetes, Docker, Linux, Shell, Python, Ansible, Terraform, Jenkins, Azure DevOps, Istio, CNCF, Prometheus, Grafana, ELK, AWS, Azure, GCP). Each video is an animated HTML player with narration, captions, 1–4× speed and MP4 export. The library is built here and published to GitHub Pages:
+Eighteen hands-on DevOps explainer videos (Git, Kubernetes, Docker, Linux, Shell, Python, Ansible, Terraform, Jenkins, Azure DevOps, Istio, CNCF, Prometheus, Grafana, ELK, AWS, Azure, GCP). Each video is an animated HTML player with narration, captions, 1–4× speed and MP4 export. The library is built here and published to GitHub Pages:
 
 **https://srinivaskona7.github.io/devops-html/**
 
@@ -41,6 +41,7 @@ Each scene's length comes from its real narration clip, so the voice, captions a
 | `build.py` | Builds `site/` (not committed; CI builds it) |
 | `voice.py` | Generates narration with Fish Audio |
 | `tools/test_site.py` | Playwright test: playback, sync, seek, speed, mute, export audio, offline files, links |
+| `tools/check_layout.py` | Draws every scene of every video and fails on text that overflows or is cut off |
 | `.github/workflows/pages.yml` | Build, test, deploy |
 
 ## Common tasks
@@ -48,6 +49,7 @@ Each scene's length comes from its real narration clip, so the voice, captions a
 ```bash
 # Build and test locally (needs Node, Python 3.12+, ffmpeg; the test also needs: pip install playwright)
 python3 build.py
+python3 tools/check_layout.py
 python3 tools/test_site.py
 open site/downloads/docker.html          # offline file works straight from disk
 

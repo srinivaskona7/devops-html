@@ -65,7 +65,8 @@ async def main():
         # ---------- library page
         await pg.goto(BASE)
         cards = await pg.locator("article.c").count()
-        ok(cards == 17, f"library lists 17 videos ({cards})")
+        n_content = len(list((ROOT / "content").glob("*.js")))
+        ok(cards == n_content, f"library lists all {n_content} videos ({cards})")
         hrefs = await pg.eval_on_selector_all("a[href]", "els => els.map(e => e.getAttribute('href'))")
         local = [h for h in hrefs if not h.startswith("http")]
         missing = [h for h in local if not (SITE / h).is_file()]

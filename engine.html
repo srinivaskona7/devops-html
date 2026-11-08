@@ -229,7 +229,7 @@ function icon(name, x, y, size, col, lw = 2) {
 /* =================== scene preparation & timing =================== */
 const SC = D.scenes.map((s, i) => Object.assign({}, s, { i }));
 const VO = (D.vo && D.vo.clips) || null;   // recorded narration: one clip per scene, [{f, d}] or null
-const PH_TYPES = new Set(['step', 'flow', 'compare']);
+const PH_TYPES = new Set(['step', 'flow', 'compare', 'tree', 'graph']);
 let phaseN = 0, curSec = '';
 SC.forEach(s => {
   s.phase = PH_TYPES.has(s.type) && !s.x;
@@ -282,6 +282,8 @@ function prepReveal(s) {
   if (s.rows) s.rwT = anchors(s, s.rows.map(r => Array.isArray(r) ? r[0] : r), 0.1, 0.8);
   if (s.points) s.ptT = anchors(s, s.points, 0.06, 0.8);
   if (s.repos) s.rpT = anchors(s, s.repos.map(r => r[0].split('/').pop().replace(/-/g, ' ')), 0.05, 0.85);
+  if (s.files) s.flT = anchors(s, s.files.map(f => f[0].split('/').pop().replace(/[._-]/g, ' ')), 0.08, 0.75);
+  if (s.ops) s.opT = s.ops.map((_, k) => LEAD + sp * (0.1 + 0.75 * (s.ops.length < 2 ? 0 : k / (s.ops.length - 1))));
   if (s.cmd) { const n = s.cmd.length; s.cmT = s.cmd.map((_, k) => LEAD + sp * (0.12 + 0.76 * (n < 2 ? 0 : k / (n - 1)))); }
   s.tipT = LEAD + sp * 0.82;
 }
@@ -531,7 +533,108 @@ function drawRecap(s, L) {
     let x = 760; items.forEach(([ic, lb]) => { icon(ic, x, 794, 36, TH.accent); font(600, 26); ctx.fillStyle = TH.text; ctx.fillText(lb, x + 48, 812); x += 70 + ctx.measureText(lb).width + 40; }); ctx.globalAlpha = 1;
   }
 }
-const DRAW = { hook: drawHook, roadmap: drawRoadmap, step: drawStep, flow: drawFlow, compare: drawCompare, mistakes: drawMistakes, repos: drawRepos, recap: drawRecap };
+
+/* =================== Git scenes: folder tree and commit graph =================== */
+// tree: { files: [[path, status, note?]], cmd?: [...] }   status: '' | 'U' untracked | 'A' staged | 'M' modified | 'D' deleted | 'I' ignored | 'C' committed | 'X' conflict
+const FS = { U: ['#d29922', 'untracked'], A: ['#3fb950', 'staged'], M: ['#4f8cff', 'modified'], D: ['#f85149', 'deleted'], I: ['#6b7280', 'ignored'], C: ['#9aa4b2', 'committed'], X: ['#f85149', 'conflict'], R: ['#a371f7', 'renamed'] };
+function drawTree(s, L) {
+  const a0 = ease(L / 0.35), lx = 100, lw = s.cmd ? 820 : 1720;
+  chip(s.phase ? `STEP ${s.pn} / ${PHASES.length}` + (s.secName ? `  ·  ${s.secName.toUpperCase()}` : '') : (s.chip || s.name).toUpperCase(), lx, 132, a0);
+  const th = title(s.title, lx, 196, lw, a0, 54, 1);
+  const y0 = 196 + th + 24, n = s.files.length, rh = Math.min(64, (s.cmd ? 500 : 400) / Math.max(n, 1)), ai = activeIndex(s.flT, L);
+  if (y0 + n * rh + 74 > (s.cmd ? 890 : 786)) OVER.set('tree:' + s.title, { tag: 'tree', text: s.title, issue: 'folder panel too tall' });
+  ctx.globalAlpha = a0; fillRR(lx, y0, lw, n * rh + 74, 16, TH.surface); ctx.globalAlpha = 1;
+  font(600, 22, true); ctx.fillStyle = TH.muted; ctx.textBaseline = 'middle'; ctx.globalAlpha = a0;
+  icon('folder', lx + 22, y0 + 18, 28, TH.accent); ctx.fillText(s.root || 'project/', lx + 62, y0 + 33); ctx.globalAlpha = 1;
+  s.files.forEach(([path, st, note], k) => {
+    const a = ease((L - s.flT[k]) / 0.35); if (a <= 0) return;
+    const depth = (path.match(/\//g) || []).length - (path.endsWith('/') ? 1 : 0), name = path.replace(/\/$/, '').split('/').pop() + (path.endsWith('/') ? '/' : '');
+    const y = y0 + 62 + k * rh, x = lx + 30 + depth * 36, act = k === ai && L < s.tipT, c = FS[st] ? FS[st][0] : TH.text;
+    ctx.globalAlpha = a * (act || L >= s.tipT ? 1 : 0.62);
+    if (act) { fillRR(lx + 12, y, lw - 24, rh - 6, 10, TH.surface2); ctx.fillStyle = TH.accent; ctx.fillRect(lx + 12, y + 8, 4, rh - 22); }
+    icon(path.endsWith('/') ? 'folder' : 'file', x, y + (rh - 6) / 2 - 13, 26, path.endsWith('/') ? TH.accent : c);
+    font(600, 25, true); ctx.fillStyle = st === 'I' ? TH.muted : TH.text; ctx.fillText(name, x + 40, y + (rh - 6) / 2);
+    const nw = ctx.measureText(name).width;
+    if (st && FS[st]) {
+      const lab = FS[st][1]; font(700, 18); const bw = ctx.measureText(lab).width + 24, bx = lx + lw - bw - 26;
+      fillRR(bx, y + (rh - 6) / 2 - 15, bw, 30, 15, hexA(FS[st][0], 0.18)); ctx.fillStyle = FS[st][0]; ctx.fillText(lab, bx + 12, y + (rh - 6) / 2);
+      if (note) { font(400, 21); ctx.fillStyle = TH.muted; const room = bx - (x + 40 + nw + 28); if (room > 60) ctx.fillText(wrap(note, room, 1, 'fnote')[0], x + 40 + nw + 24, y + (rh - 6) / 2); }
+    } else if (note) { font(400, 21); ctx.fillStyle = TH.muted; ctx.fillText(note, x + 40 + nw + 24, y + (rh - 6) / 2); }
+    ctx.globalAlpha = 1;
+  });
+  if (s.cmd) { terminal(s, L, 980, 132, 840, s.tip ? 594 : 738); tipBar(s, L, 980, 776, 840); }
+  else tipBar(s, L, 100, 800, 1720);
+}
+
+// graph: { ops: [op...], cmd?: [...] }  ops run in order as the narration plays:
+//   ['c', id, branch, msg]  commit on branch (branch created from HEAD if new)   ['b', name]   ['co', name]
+//   ['m', id, from, msg]    merge commit of branch `from` into the current branch
+//   ['rb', branch, onto]    rebase: copies of branch commits move onto `onto` (old ones fade)
+//   ['ff', branch, to]      fast-forward a branch label   ['tag', name, id]   ['rm', id] fade a commit (reset)
+function graphState(s, upto) {
+  const C = new Map(), B = new Map(), lanes = new Map(), T = []; let head = 'main', lane = 0, x = 0;
+  const laneOf = b => { if (!lanes.has(b)) lanes.set(b, lanes.size); return lanes.get(b); };
+  laneOf('main');
+  s.ops.slice(0, upto + 1).forEach(op => {
+    if (op[0] === 'c') { const b = op[2] || head; if (!B.has(b)) B.set(b, B.get(head)); const p = B.get(b); C.set(op[1], { id: op[1], msg: op[3] || '', p: p ? [p] : [], lane: laneOf(b), x: x++, gone: false }); B.set(b, op[1]); head = b; }
+    else if (op[0] === 'b') { B.set(op[1], B.get(head)); laneOf(op[1]); }
+    else if (op[0] === 'co') { if (!B.has(op[1])) B.set(op[1], B.get(head)); head = op[1]; laneOf(op[1]); }
+    else if (op[0] === 'm') { C.set(op[1], { id: op[1], msg: op[3] || 'Merge', p: [B.get(head), B.get(op[2])], lane: laneOf(head), x: x++, merge: true }); B.set(head, op[1]); }
+    else if (op[0] === 'rb') {
+      const chain = []; let c = B.get(op[1]); const base = new Set(); let q = B.get(op[2]); while (q) { base.add(q); q = (C.get(q) || { p: [] }).p[0]; }
+      while (c && !base.has(c)) { chain.unshift(c); c = C.get(c).p[0]; }
+      let parent = B.get(op[2]); chain.forEach(id => { const o = C.get(id); o.gone = true; const nid = id + "'"; C.set(nid, { id: nid, msg: o.msg, p: [parent], lane: o.lane, x: x++ }); parent = nid; });
+      B.set(op[1], parent);
+    }
+    else if (op[0] === 'ff') { B.set(op[1], op[2] === undefined ? B.get(head) : (B.has(op[2]) ? B.get(op[2]) : op[2])); }
+    else if (op[0] === 'tag') T.push([op[1], op[2]]);
+    else if (op[0] === 'rm') { const o = C.get(op[1]); if (o) o.gone = true; const b = [...B].find(([, v]) => v === op[1]); if (b) B.set(b[0], o.p[0]); }
+  });
+  return { C, B, head, T, lanes };
+}
+function drawGraph(s, L) {
+  const a0 = ease(L / 0.35), wide = !s.cmd, gw = wide ? 1720 : 820;
+  chip(s.phase ? `STEP ${s.pn} / ${PHASES.length}` + (s.secName ? `  ·  ${s.secName.toUpperCase()}` : '') : (s.chip || s.name).toUpperCase(), 100, 132, a0);
+  title(s.title, 100, 196, gw, a0, 54, 1);
+  const k = activeIndex(s.opT, L); if (k < 0) { if (s.cmd) terminal(s, L, 980, 132, 840, s.tip ? 594 : 738); return; }
+  const st = graphState(s, k), prev = k > 0 ? graphState(s, k - 1) : { C: new Map() }, mix = ease((L - s.opT[k]) / 0.45);
+  const all = [...st.C.values()], xs = all.map(c => c.x), minX = Math.min(...xs), maxX = Math.max(...xs), nL = st.lanes.size;
+  const gx = 100, gy = 300, gh = 440, stepX = Math.min(170, (gw - 260) / Math.max(1, maxX - minX)), laneH = Math.min(150, (gh - 110) / Math.max(1, nL - 1 || 1));
+  const pos = c => [gx + 80 + (c.x - minX) * stepX, gy + 110 + c.lane * laneH];
+  ctx.globalAlpha = a0; fillRR(gx, gy, gw, gh + 40, 18, TH.surface); ctx.globalAlpha = 1;
+  const laneCol = i => [TH.accent, '#3fb950', '#d29922', '#a371f7', '#f778ba'][i % 5];
+  // edges
+  all.forEach(c => c.p.forEach(pid => {
+    const p = st.C.get(pid); if (!p) return; const [x1, y1] = pos(p), [x2, y2] = pos(c), fresh = !prev.C.has(c.id);
+    ctx.globalAlpha = (c.gone ? 0.25 : 1) * (fresh ? mix : 1); ctx.strokeStyle = laneCol(c.lane); ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x1, y1); if (y1 === y2) ctx.lineTo(x2, y2); else ctx.bezierCurveTo((x1 + x2) / 2, y1, (x1 + x2) / 2, y2, x2, y2); ctx.stroke();
+  }));
+  // commits
+  all.forEach(c => {
+    const [x, y] = pos(c), fresh = !prev.C.has(c.id), a = (c.gone ? 0.28 : 1) * (fresh ? mix : 1); if (a <= 0) return;
+    ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(x, y, fresh ? 22 + 8 * (1 - mix) : 22, 0, Math.PI * 2); ctx.fillStyle = c.merge ? TH.bg : laneCol(c.lane); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = laneCol(c.lane); ctx.stroke();
+    font(700, 18, true); ctx.fillStyle = c.merge ? laneCol(c.lane) : '#0b0f17'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(c.id.slice(0, 3), x, y);
+    font(500, 19); ctx.fillStyle = TH.muted; ctx.fillText(wrap(c.msg, stepX - 8, 1, 'gmsg')[0], x, y + 44); ctx.textAlign = 'left';
+    if (c.gone) { ctx.strokeStyle = TH.bad; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 14, y - 14); ctx.lineTo(x + 14, y + 14); ctx.stroke(); }
+  });
+  // branch labels (+ HEAD) and tags
+  if (stepX < 80) OVER.set('graph:' + s.title, { tag: 'graph', text: s.title, issue: `commits too close (${stepX.toFixed(0)}px)` });
+  if (nL > 4) OVER.set('graphL:' + s.title, { tag: 'graph', text: s.title, issue: `${nL} lanes > 4` });
+  const stack = new Map();
+  [...st.B].forEach(([b, id]) => {
+    const c = st.C.get(id); if (!c) return; const [x, y] = pos(c), n = stack.get(id) || 0; stack.set(id, n + 1);
+    const lab = (b === st.head ? 'HEAD → ' : '') + b; font(700, 19, true); const w = ctx.measureText(lab).width + 22, lyy = y - 58 - n * 34;
+    if (lyy - 14 < gy + 4 || x + w / 2 > gx + gw - 6) OVER.set('glab:' + s.title + b, { tag: 'graph', text: `${s.title}: label ${b}`, issue: 'branch label outside panel' });
+    ctx.globalAlpha = 1; fillRR(x - w / 2, lyy - 14, w, 28, 8, b === st.head ? TH.accent : TH.surface2);     ctx.fillStyle = b === st.head ? '#0b0f17' : laneCol(c.lane); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(lab, x, lyy); ctx.textAlign = 'left';
+  });
+  st.T.forEach(([name, id]) => { const c = st.C.get(id); if (!c) return; const [x, y] = pos(c); font(700, 18, true); const w = ctx.measureText('🏷 ' + name).width + 20;
+    fillRR(x - w / 2, y + 66, w, 28, 8, hexA(TH.warn, 0.2)); ctx.fillStyle = TH.warn; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🏷 ' + name, x, y + 80); ctx.textAlign = 'left'; });
+  ctx.globalAlpha = 1;
+  if (s.cmd) { terminal(s, L, 980, 132, 840, s.tip ? 594 : 738); tipBar(s, L, 980, 776, 840); }
+  else tipBar(s, L, 100, 800, 1720);
+}
+const DRAW = { tree: drawTree, graph: drawGraph, hook: drawHook, roadmap: drawRoadmap, step: drawStep, flow: drawFlow, compare: drawCompare, mistakes: drawMistakes, repos: drawRepos, recap: drawRecap };
 function sceneAt(t) { for (let k = 0; k < SC.length; k++) if (t < starts[k] + SC[k].dur) return k; return SC.length - 1; }
 function draw(t) {
   t = clamp(t, 0, TOTAL - 0.001); const i = sceneAt(t), s = SC[i], L = t - starts[i];

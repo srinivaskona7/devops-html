@@ -30,13 +30,13 @@ ENGINE = (ROOT / "engine.html").read_text()
 _ic = ENGINE.split("const IC = {")[1].split("};")[0]
 ICONS = set(re.findall(r"^\s{2}(\w+): '", _ic, re.M)) | set(re.findall(r",\s(\w+): '", _ic))
 WPS, PAD, LEAD = 2.15, 1.4, 0.35
-ORDER = ["kubernetes", "docker", "linux", "shell", "python", "ansible", "terraform", "jenkins", "azure-devops",
+ORDER = ["git", "kubernetes", "docker", "linux", "shell", "python", "ansible", "terraform", "jenkins", "azure-devops",
          "istio", "cncf", "prometheus", "grafana", "elk", "aws", "azure", "gcp"]
 SITE_URL = "https://srinivaskona7.github.io/devops-html/"
 
 
 def load(path):
-    out = subprocess.check_output(["node", "-e", f"process.stdout.write(JSON.stringify(require({json.dumps(str(path))})))"])
+    out = subprocess.check_output(["node", "-e", f"process.stdout.write(JSON.stringify(require({json.dumps(str(pathlib.Path(path).resolve()))})))"])
     d = json.loads(out)
     for s in d["scenes"]:
         s.setdefault("type", "flow" if "nodes" in s else "compare" if "cols" in s else "step")
