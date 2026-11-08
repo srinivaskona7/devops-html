@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/*__TITLE__*/ · kona-srinivas-devops</title>
+<style>
+:root { --on:#fff; --bg:#070a12; --panel:#0f1420; --panel2:#151b2a; --line:rgba(255,255,255,.1); --text:#e6e9ef; --muted:#9aa4b2; --accent:/*__ACCENT__*/; --ok:#3fb950; --warn:#d29922; --bad:#f85149; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+button, select, input { font: inherit; color: inherit; }
+.bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.bar b { font-weight: 800; } .bar .t { color: var(--muted); } .bar a { margin-left: auto; color: var(--accent); text-decoration: none; font-weight: 600; }
+.layout { display: flex; gap: 14px; padding: 12px 16px; align-items: flex-start; }
+.player { flex: 1; min-width: 0; }
+.stagewrap { position: relative; width: min(100%, calc((100vh - 190px) * 16 / 9)); margin: 0 auto; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
+.stagewrap canvas { width: 100%; height: 100%; display: block; }
+.tap { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; background: rgba(5,8,14,.55); cursor: pointer; }
+.tap button { width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on); font-size: 38px; cursor: pointer; padding-left: 8px; }
+.tap p { margin: 0; font-weight: 700; }
+.count { position: absolute; inset: 0; display: grid; place-items: center; font-size: 160px; font-weight: 800; color: #fff; background: rgba(0,0,0,.45); pointer-events: none; }
+.seekwrap { position: relative; width: min(100%, calc((100vh - 190px) * 16 / 9)); margin: 8px auto 0; }
+#seek { width: 100%; accent-color: var(--accent); margin: 0; }
+#ticks { position: absolute; left: 0; right: 0; top: -2px; height: 6px; pointer-events: none; }
+#ticks i { position: absolute; top: 0; width: 2px; height: 6px; background: rgba(255,255,255,.35); }
+.ctrl { width: min(100%, calc((100vh - 190px) * 16 / 9)); margin: 6px auto 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ctrl button, .ctrl select { height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; }
+.ctrl button:hover { background: #1d2538; }
+.ctrl button.on { background: var(--accent); border-color: transparent; color: var(--on); }
+.ctrl .grp { display: inline-flex; } .ctrl .grp button { border-radius: 0; } .ctrl .grp button:first-child { border-radius: 8px 0 0 8px; } .ctrl .grp button:last-child { border-radius: 0 8px 8px 0; }
+.ctrl .primary { background: var(--accent); border-color: transparent; color: var(--on); font-weight: 700; }
+#time { margin-left: auto; font-family: "SF Mono", Menlo, monospace; color: var(--muted); }
+#sceneName { width: min(100%, calc((100vh - 190px) * 16 / 9)); margin: 6px auto 0; color: var(--muted); }
+.menu { position: relative; } .menu .pop { position: absolute; bottom: 38px; left: 0; z-index: 5; display: none; flex-direction: column; min-width: 210px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px; }
+.menu.open .pop { display: flex; } .menu .pop button { text-align: left; border: 0; background: transparent; height: 34px; }
+.menu .pop button:hover { background: var(--panel2); }
+body.clean .bar, body.clean .ctrl, body.clean .seekwrap, body.clean #sceneName, body.clean .studio { display: none !important; }
+body.clean .stagewrap { width: min(100vw, calc(100vh * 16 / 9)); border-radius: 0; }
+body.clean .layout { padding: 0; }
+.studio { width: 400px; flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: calc(100vh - 80px); overflow: auto; }
+.studio h3 { margin: 4px 0 8px; font-size: 16px; } .studio h4 { margin: 14px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.studio select, .studio input[type=number] { width: 100%; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); padding: 0 8px; }
+.studio button { height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; }
+.studio button.primary { background: var(--accent); color: var(--on); border-color: transparent; font-weight: 700; }
+.studio .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.studio label.ck { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+#meter { width: 100%; height: 14px; border-radius: 7px; background: var(--panel2); display: block; }
+#prompter { font-size: 18px; line-height: 1.5; background: var(--panel2); border-radius: 10px; padding: 10px; min-height: 90px; }
+#prompter .cw { color: var(--accent); font-weight: 800; } #prompter .pw { color: var(--muted); }
+.takes { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.takes td, .takes th { padding: 4px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+.takes tr.sel { background: rgba(255,255,255,.06); }
+.takes td button { height: 24px; padding: 0 6px; font-size: 12px; }
+.st-ok { color: var(--ok); } .st-warn { color: var(--warn); } .st-bad { color: var(--bad); }
+#checks div { margin: 3px 0; font-size: 13px; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 4px 0; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; }
+.modal .box { width: min(560px, 92vw); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.modal h3 { margin: 0 0 10px; } .modal label { display: block; margin: 6px 0; }
+.modal .opt { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border-radius: 10px; border: 1px solid var(--line); margin: 6px 0; cursor: pointer; }
+.modal .opt.dis { opacity: .45; cursor: not-allowed; } .modal .opt small { display: block; color: var(--muted); }
+.modal .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.modal select { height: 32px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); padding: 0 8px; }
+.modal .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.modal button { height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; }
+.modal button.primary { background: var(--accent); color: var(--on); border-color: transparent; font-weight: 700; }
+.modal code { background: var(--panel2); padding: 2px 6px; border-radius: 6px; font-size: 12px; word-break: break-all; }
+.recbar { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 30; background: #111827; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; display: flex; gap: 12px; align-items: center; }
+.recbar i { width: 10px; height: 10px; border-radius: 50%; background: var(--bad); animation: bl 1s steps(1) infinite; } @keyframes bl { 50% { opacity: 0; } }
+.recbar button { height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); padding: 0 10px; cursor: pointer; }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #111827; border: 1px solid var(--line); padding: 10px 14px; border-radius: 10px; opacity: 0; transition: .25s; pointer-events: none; z-index: 40; max-width: 90vw; }
+.toast.show { opacity: 1; }
+@media (max-width: 1100px) { .layout { flex-direction: column; } .studio { width: 100%; max-height: none; } }
+</style>
+</head>
+<body>
+<header class="bar"><b>kona-srinivas-devops</b><span class="t" id="ttl"></span><a id="home" href="index.html">← All videos</a></header>
+<main class="layout">
+  <section class="player">
+    <div class="stagewrap" id="stagewrap">
+      <canvas id="cv" width="1920" height="1080" aria-label="Video"></canvas>
+      <div class="tap" id="tap"><button aria-label="Play">▶</button><p>Tap to play · default voice on</p></div>
+      <div class="count" id="count" hidden></div>
+    </div>
+    <div class="seekwrap"><div id="ticks"></div><input type="range" id="seek" min="0" max="10000" value="0" step="1" aria-label="Seek"></div>
+    <div class="ctrl">
+      <button id="bPlay" class="primary" title="Play/Pause (Space)">▶ Play</button>
+      <button id="bRestart" title="Restart (R)">⟲</button>
+      <span class="grp" id="speeds"><button data-s="1" class="on">1×</button><button data-s="2">2×</button><button data-s="3">3×</button><button data-s="4">4×</button></span>
+      <button id="bLoop" title="Loop (L)">🔁</button>
+      <button id="bMute" title="Mute (M)">🔊</button>
+      <button id="bCC" class="on" title="Captions (C)">CC</button>
+      <select id="voiceSel" title="Default voice"></select>
+      <button id="bStudio" title="Voice Studio">🎙 Voice Studio</button>
+      <button id="bDl" class="primary" title="Download video">⬇ Download video</button>
+      <span class="menu" id="more"><button id="bMore">⋯ More</button>
+        <span class="pop">
+          <button id="mScript">📝 Copy timed script</button>
+          <button id="mSrt">⬇ Subtitles .srt</button>
+          <button id="mCues">⬇ cues.json</button>
+          <button id="mFrame">📸 Save frame (PNG)</button>
+        </span></span>
+      <button id="bFs" title="Fullscreen (F)">⛶</button>
+      <button id="bClean" title="Clean mode (H)">Clean</button>
+      <span id="time">0:00 / 0:00</span>
+    </div>
+    <div id="sceneName"></div>
+  </section>
+
+  <aside class="studio" id="studio" hidden>
+    <h3>🎙 Voice Studio</h3>
+    <p class="hint">Record your own voice-over with any microphone, or upload audio. It is placed at each scene's exact start time, merged and used in the downloaded video. Everything stays in your browser.</p>
+    <h4>1 · Microphone</h4>
+    <div class="row"><button id="micOn" class="primary">Enable microphone</button><span class="hint" id="micMsg"></span></div>
+    <select id="micSel" disabled><option>Microphones appear after you enable access</option></select>
+    <div class="row">
+      <label class="ck"><input type="checkbox" id="cNs" checked>Noise suppression</label>
+      <label class="ck"><input type="checkbox" id="cEc" checked>Echo cancel</label>
+      <label class="ck"><input type="checkbox" id="cAgc">Auto gain</label>
+    </div>
+    <canvas id="meter" width="360" height="14"></canvas>
+    <p class="hint" id="meterMsg">Level meter</p>
+    <h4>2 · Teleprompter</h4>
+    <div id="prompter">Select a scene below. Its script appears here, and the current word is highlighted while you record.</div>
+    <h4>3 · Record</h4>
+    <div class="row"><button id="recScene" class="primary">⏺ Record selected scene</button><button id="recFull">⏺ Full take (whole video)</button><button id="recStop" disabled>■ Stop</button></div>
+    <p class="hint">A 3-2-1 countdown runs first. Scene takes stop on their own at the scene's end. Headphones keep the video sound out of your mic.</p>
+    <table class="takes"><thead><tr><th>#</th><th>Scene</th><th>Len</th><th>Take</th><th></th></tr></thead><tbody id="takeRows"></tbody></table>
+    <h4>4 · Or upload audio</h4>
+    <div class="row"><input type="file" id="upAudio" accept="audio/*"></div>
+    <div id="upMsg" class="hint"></div>
+    <h4>5 · Fit, clean &amp; merge</h4>
+    <div class="row"><label class="ck"><input type="checkbox" id="cTrim" checked>Trim silence at take starts</label><label class="ck"><input type="checkbox" id="cNorm" checked>Normalise to −1 dBFS</label></div>
+    <label class="hint">Sync nudge (ms, + = later)</label><input type="number" id="nudge" value="0" step="10" min="-1000" max="1000">
+    <div class="row"><button id="merge" class="primary">🔀 Merge voice-over</button><button id="useMine" disabled>▶ Preview with my voice</button><button id="wav" disabled>⬇ .wav</button></div>
+    <div id="checks"></div>
+  </aside>
+</main>
+
+<div class="modal" id="dlModal" hidden>
+  <div class="box">
+    <h3>⬇ Download video</h3>
+    <div id="dlOpts"></div>
+    <div class="row">
+      <label>FPS <select id="dlFps"><option>30</option><option>60</option></select></label>
+      <label>Quality <select id="dlBr"><option value="8">8 Mbps</option><option value="12" selected>12 Mbps</option><option value="16">16 Mbps</option></select></label>
+      <label><input type="checkbox" id="dlCC" checked> Burn in captions</label>
+    </div>
+    <p class="hint" id="dlInfo"></p>
+    <div class="btns"><button id="dlCancel">Cancel</button><button class="primary" id="dlGo">Start recording</button></div>
+  </div>
+</div>
+<div class="recbar" id="recbar" hidden><i></i><span id="recTxt">Recording…</span><button id="recCancel">Cancel</button></div>
+<div class="toast" id="toast" role="status"></div>
+<audio id="mine" preload="auto"></audio>
+
+<script>const DATA = /*__DATA__*/;</script>
+<script>
+(() => {
+'use strict';
+/* =================== constants & theme =================== */
+const W = 1920, H = 1080, D = DATA;
+const TH = { bg: '#0b0f17', surface: '#141a26', surface2: '#1a2131', line: '#273043', text: '#e6e9ef', muted: '#9aa4b2', accent: D.accent || '#4f8cff', ok: '#3fb950', warn: '#d29922', bad: '#f85149', term: '#0a0e14' };
+const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+const MONO = '"SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+const WPS = 2.15, PAD = 1.4, LEAD = 0.35;
+const $ = id => document.getElementById(id);
+{ const n = parseInt(TH.accent.slice(1), 16), c = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const lum = 0.2126 * c(n >> 16 & 255) + 0.7152 * c(n >> 8 & 255) + 0.0722 * c(n & 255);
+  document.documentElement.style.setProperty('--on', lum > 0.32 ? '#0b0f17' : '#ffffff'); }
+const cv = $('cv'), ctx = cv.getContext('2d');
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const fmt = s => { s = Math.max(0, s); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); };
+const fmtTC = s => { const m = Math.floor(s / 60), r = s - m * 60; return String(m).padStart(2, '0') + ':' + r.toFixed(1).padStart(4, '0'); };
+function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+
+/* =================== icons (24x24 stroke paths) =================== */
+const IC = {
+  check: 'M20 6 9 17l-5-5', x: 'M18 6 6 18M6 6l12 12', arrow: 'M5 12h14M13 6l6 6-6 6',
+  power: 'M12 2v10M18.36 6.64a9 9 0 1 1-12.73 0', cpu: 'M5 5h14v14H5zM9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3',
+  server: 'M3 4h18v6H3zM3 14h18v6H3zM7 7h.01M7 17h.01', database: 'M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
+  cloud: 'M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z', box: 'M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',
+  container: 'M3 7h18v13H3zM7 7v13M11 7v13M15 7v13M3 4h18', layers: 'm12 2 10 5-10 5L2 7zM2 12l10 5 10-5M2 17l10 5 10-5',
+  terminal: 'M2 4h20v16H2zM6 9l3 3-3 3M12 15h6', file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6',
+  folder: 'M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+  gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1M12 5a7 7 0 1 0 0 14 7 7 0 1 0 0-14',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4', key: 'M21 2l-2 2M11.4 11.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8zM15.5 7.5l3 3L22 7l-3-3M11.4 11.6 19 4',
+  shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', user: 'M12 4a4 4 0 1 0 0 8 4 4 0 1 0 0-8M4 21a8 8 0 0 1 16 0',
+  users: 'M9 4a4 4 0 1 0 0 8 4 4 0 1 0 0-8M1 21a8 8 0 0 1 16 0M17 4a4 4 0 0 1 0 8M23 21a8 8 0 0 0-5-7.4',
+  globe: 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20',
+  clock: 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20M12 6v6l4 2', search: 'M11 4a7 7 0 1 0 0 14 7 7 0 1 0 0-14M21 21l-4.3-4.3',
+  chart: 'M3 3v18h18M7 15l4-4 3 3 6-6', bars: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
+  warn: 'M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01',
+  bug: 'M8 6a4 4 0 0 1 8 0M6 9h12v6a6 6 0 0 1-12 0zM12 9v12M2 13h4M18 13h4M3 7l3 2M21 7l-3 2M3 19l3-2M21 19l-3-2',
+  git: 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9',
+  refresh: 'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15',
+  scale: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7', route: 'M12 2v20M5 6h12l3 3-3 3H5zM19 14H7l-3 3 3 3h12',
+  link: 'M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7',
+  heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z',
+  play: 'M6 4l14 8-14 8z', code: 'M16 18l6-6-6-6M8 6l-6 6 6 6', list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6',
+  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',
+  rocket: 'M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22 22 0 0 1-4 2zM9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5',
+  wheel: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6M12 3v6M12 15v6M3 12h6M15 12h6M5.6 5.6l4.3 4.3M14.1 14.1l4.3 4.3M5.6 18.4l4.3-4.3M14.1 9.9l4.3-4.3',
+  ship: 'M2 20c2 1 4 1 6 0s4-1 6 0 4 1 6 0M4 17l-1-5h18l-1 5M6 12V7h12v5M12 3v4',
+  wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z',
+  dollar: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', zap: 'M13 2 3 14h9l-1 8 10-12h-9z',
+  pipeline: 'M2 9h5v6H2zM9.5 9h5v6h-5zM17 9h5v6h-5zM7 12h2.5M14.5 12H17', star: 'M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z',
+  trash: 'M3 6h18M8 6V4h8v2M5 6l1 15h12l1-15', download: 'M12 3v12M7 10l5 5 5-5M4 17v3h16v-3', upload: 'M12 21V9M7 14l5-5 5 5M4 7V4h16v3',
+  filter: 'M22 3H2l8 9.5V19l4 2v-8.5z', hash: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18', gauge: 'M12 14l4-4M3.3 19a10 10 0 1 1 17.4 0z',
+  dash: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z', mesh: 'M18 2a3 3 0 1 0 0 6 3 3 0 1 0 0-6M6 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6M18 16a3 3 0 1 0 0 6 3 3 0 1 0 0-6M8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z', tag: 'M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01',
+  map: 'M1 6v16l7-4 8 4 7-4V2l-7 4-8-4zM8 2v16M16 6v16', monitor: 'M2 3h20v14H2zM8 21h8M12 17v4',
+  disk: 'M22 12H2M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6zM6 16h.01M10 16h.01', comment: 'M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z',
+  share: 'M22 2 11 13M22 2l-7 20-4-9-9-4z', bookmark: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z',
+  book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5',
+  question: 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01', lightbulb: 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z',
+  python: 'M12 2c-5 0-5 2-5 3v3h5v1H5c-2 0-3 2-3 5s1 5 3 5h2v-3c0-1.7 1.3-3 3-3h5c1.7 0 3-1.3 3-3V5c0-1-1-3-6-3zM9 5h.01M12 22c5 0 5-2 5-3v-3h-5v-1h7c2 0 3-2 3-5s-1-5-3-5h-2v3c0 1.7-1.3 3-3 3H9c-1.7 0-3 1.3-3 3v5c0 1 1 3 6 3zM15 19h.01',
+};
+const P2 = {};
+function icon(name, x, y, size, col, lw = 2) {
+  const p = P2[name] || (P2[name] = new Path2D(IC[name] || IC.box));
+  ctx.save(); ctx.translate(x, y); ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(p); ctx.restore();
+}
+
+/* =================== scene preparation & timing =================== */
+const SC = D.scenes.map((s, i) => Object.assign({}, s, { i }));
+const VO = (D.vo && D.vo.clips) || null;   // recorded narration: one clip per scene, [{f, d}] or null
+const PH_TYPES = new Set(['step', 'flow', 'compare']);
+let phaseN = 0, curSec = '';
+SC.forEach(s => {
+  s.phase = PH_TYPES.has(s.type) && !s.x;
+  if (s.phase) s.pn = ++phaseN;
+  if (s.sec) curSec = s.sec; s.secName = s.phase ? curSec : '';
+  s.name = s.name || s.title || s.type;
+  const toks = String(s.n || '').trim().split(/\s+/).filter(Boolean);
+  const wts = toks.map(w => Math.max(2, w.replace(/[^\w]/g, '').length) + (/[,;:]$/.test(w) ? 3 : 0) + (/[.!?]$/.test(w) ? 6 : 0));
+  const span = VO && VO[s.i] ? VO[s.i].d : toks.length / WPS, tw = wts.reduce((a, b) => a + b, 0) || 1;
+  let acc = LEAD; s.words = toks.map((w, k) => { const d = span * wts[k] / tw; const o = { w, t0: acc, t1: acc + d }; acc += d; return o; });
+  s.speech = span;
+  const ch = []; let cur = [];
+  s.words.forEach((o, k) => { cur.push(k); if (cur.length >= 7 || /[.!?,;:]$/.test(o.w) && cur.length >= 3) { ch.push(cur); cur = []; } });
+  if (cur.length) ch.push(cur); s.chunks = ch;
+});
+const PHASES = SC.filter(s => s.phase);
+const SECTIONS = [...new Set(PHASES.map(s => s.secName).filter(Boolean))];
+let STRETCH = 1, starts = [], TOTAL = 0;
+let HOLD = 0;
+function rawDur(s) { return Math.max(s.min || 5, LEAD + s.speech + PAD + (s.cmd ? 1.2 : 0)); }
+{ const nCmd = SC.filter(s => s.cmd).length, base = SC.reduce((a, s) => a + rawDur(s), 0);
+  if (D.target && nCmd) HOLD = clamp((D.target * 60 * 0.985 - base) / nCmd, 0, 8); }
+function baseDur(s) { return rawDur(s) + (s.cmd ? HOLD : 0); }
+function retime() {
+  let acc = 0; starts = SC.map(s => { s.dur = (s.fit ? Math.max(baseDur(s), s.fit) : baseDur(s)) * STRETCH; const st = acc; acc += s.dur; return st; });
+  TOTAL = acc; SC.forEach(s => prepReveal(s)); drawTicks();
+}
+const STOP = new Set('the a an and or of to in on for with is are be by it its this that your you we our as at from into one two use run get set new not can all any each'.split(' '));
+function anchors(s, labels, f0 = 0.08, f1 = 0.78) {
+  const ws = s.words, n = labels.length, sp = Math.max(1, s.speech), out = []; let k = 0;
+  labels.forEach((lab, i) => {
+    const even = LEAD + sp * (f0 + (f1 - f0) * (n < 2 ? 0 : i / (n - 1)));
+    const keys = String(lab).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !STOP.has(w));
+    let hit = -1;
+    for (let j = k; j < ws.length && hit < 0; j++) {
+      const w = ws[j].w.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (w.length >= 3 && keys.some(kw => w.startsWith(kw.slice(0, Math.min(5, kw.length))))) hit = j;
+    }
+    let t = hit >= 0 ? ws[hit].t0 : even;
+    if (hit >= 0) k = hit + 1;
+    if (out.length && t < out[out.length - 1] + 0.45) t = out[out.length - 1] + 0.45;
+    out.push(Math.min(t, LEAD + sp));
+  });
+  return out;
+}
+function prepReveal(s) {
+  const sp = Math.max(1, s.speech);
+  if (s.items) s.itT = anchors(s, s.items.map(it => it[1]));
+  if (s.nodes) s.ndT = anchors(s, s.nodes.map(n => n[1]), 0.06, 0.7);
+  if (s.rows) s.rwT = anchors(s, s.rows.map(r => Array.isArray(r) ? r[0] : r), 0.1, 0.8);
+  if (s.points) s.ptT = anchors(s, s.points, 0.06, 0.8);
+  if (s.repos) s.rpT = anchors(s, s.repos.map(r => r[0].split('/').pop().replace(/-/g, ' ')), 0.05, 0.85);
+  if (s.cmd) { const n = s.cmd.length; s.cmT = s.cmd.map((_, k) => LEAD + sp * (0.12 + 0.76 * (n < 2 ? 0 : k / (n - 1)))); }
+  s.tipT = LEAD + sp * 0.82;
+}
+
+/* =================== text helpers =================== */
+const OVER = new Map();
+function font(w, px, mono) { ctx.font = `${w} ${px}px ${mono ? MONO : SANS}`; }
+function wrap(text, maxW, maxLines, tag) {
+  const words = String(text).split(' '); const lines = []; let cur = '';
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (!cur || ctx.measureText(t).width <= maxW) cur = t; else { lines.push(cur); cur = w; } }
+  if (cur) lines.push(cur);
+  lines.forEach(l => { if (ctx.measureText(l).width > maxW + 1) OVER.set(tag + ':' + l, { tag, text: l, issue: 'too wide' }); });
+  if (lines.length > maxLines) {
+    OVER.set(tag + ':' + text, { tag, text, issue: `${lines.length} lines > ${maxLines}` });
+    const keep = lines.slice(0, maxLines); let last = keep[maxLines - 1];
+    while (last.length > 1 && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    keep[maxLines - 1] = last + '…'; return keep;
+  }
+  return lines;
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function fillRR(x, y, w, h, r, c) { rr(x, y, w, h, r); ctx.fillStyle = c; ctx.fill(); }
+
+/* =================== drawing: chrome =================== */
+let ccOn = true, ccForce = false;
+function drawChrome(s, t) {
+  ctx.fillStyle = TH.bg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = TH.line; ctx.fillRect(0, 0, W, 5); ctx.fillStyle = TH.accent; ctx.fillRect(0, 0, W * clamp(t / TOTAL), 5);
+  ctx.beginPath(); ctx.arc(76, 56, 13, 0, Math.PI * 2); ctx.fillStyle = TH.accent; ctx.fill();
+  font(700, 26); ctx.fillStyle = TH.muted; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText('kona-srinivas-devops', 102, 57);
+  font(600, 24); ctx.textAlign = 'center'; ctx.fillText(D.title, W / 2, 57); ctx.textAlign = 'left';
+  if (SECTIONS.length) {
+    const cur = s.phase ? SECTIONS.indexOf(s.secName) : -1, dot = 12, gap = 12;
+    let x = W - 90 - SECTIONS.length * (dot + gap);
+    SECTIONS.forEach((n, k) => { ctx.beginPath(); ctx.arc(x + k * (dot + gap) + dot / 2, 57, k === cur ? 7 : 5, 0, Math.PI * 2); ctx.fillStyle = k === cur ? TH.accent : k < cur ? TH.muted : TH.line; ctx.fill(); });
+    if (cur >= 0) { font(600, 22); ctx.fillStyle = TH.text; ctx.textAlign = 'right'; ctx.fillText(SECTIONS[cur], x - 18, 57); ctx.textAlign = 'left'; }
+  }
+  font(500, 22); ctx.fillStyle = TH.muted; ctx.textAlign = 'center';
+  ctx.fillText(`kona-srinivas-devops  •  ${D.tags || ''}`, W / 2, 1052); ctx.textAlign = 'left';
+}
+function curWord(s, L) {
+  if (spk.scene === s.i && performance.now() - spk.ts < 2500 && !REC) return spk.idx;
+  let k = -1; for (let j = 0; j < s.words.length; j++) { if (s.words[j].t0 <= L) k = j; else break; } return k;
+}
+function drawCaptions(s, L) {
+  if (!(ccOn || ccForce) || !s.words.length) return;
+  if (L < LEAD - 0.05 || L > LEAD + s.speech + 0.6) return;
+  const wi = Math.max(0, curWord(s, L)); const ch = s.chunks.find(c => c.includes(wi)) || s.chunks[0];
+  let px = 38; font(600, px); const txt = ch.map(k => s.words[k].w).join(' ');
+  while (ctx.measureText(txt).width > 1560 && px > 26) { px -= 2; font(600, px); }
+  const tw = ctx.measureText(txt).width; fillRR(W / 2 - tw / 2 - 28, 908, tw + 56, 72, 16, 'rgba(10,14,20,.88)');
+  let x = W / 2 - tw / 2; ctx.textBaseline = 'middle';
+  ch.forEach(k => { const w = s.words[k].w; ctx.fillStyle = k === wi ? TH.accent : k < wi ? TH.text : TH.muted; ctx.fillText(w, x, 945); x += ctx.measureText(w + ' ').width; });
+}
+function chip(text, x, y, a) {
+  font(700, 22); const w = ctx.measureText(text).width + 36;
+  ctx.globalAlpha = a; fillRR(x, y, w, 42, 21, hexA(TH.accent, 0.16)); ctx.strokeStyle = hexA(TH.accent, 0.55); ctx.lineWidth = 1.5; rr(x, y, w, 42, 21); ctx.stroke();
+  ctx.fillStyle = TH.accent; ctx.textBaseline = 'middle'; ctx.fillText(text, x + 18, y + 22); ctx.globalAlpha = 1; return w;
+}
+function title(text, x, y, maxW, a, px = 60, maxLines = 2) {
+  font(700, px); const lines = wrap(text, maxW, maxLines, 'title'); ctx.globalAlpha = a; ctx.fillStyle = TH.text; ctx.textBaseline = 'top';
+  lines.forEach((l, k) => ctx.fillText(l, x, y + k * px * 1.18)); ctx.globalAlpha = 1; return lines.length * px * 1.18;
+}
+function activeIndex(times, L) { let k = -1; times.forEach((t, i) => { if (L >= t) k = i; }); return k; }
+function tipBar(s, L, x, y, w) {
+  if (!s.tip) return; const a = ease((L - s.tipT) / 0.4); if (a <= 0) return;
+  font(600, 27); const lines = wrap(s.tip, w - 100, 2, 'tip'), hh = lines.length > 1 ? 96 : 70; y = y + 70 - hh;
+  ctx.globalAlpha = a; fillRR(x, y, w, hh, 14, TH.surface); ctx.fillStyle = TH.accent; ctx.fillRect(x, y + 12, 5, hh - 24);
+  icon('lightbulb', x + 24, y + hh / 2 - 16, 32, TH.warn); ctx.fillStyle = TH.text; ctx.textBaseline = 'middle';
+  lines.forEach((l, k) => ctx.fillText(l, x + 72, y + hh / 2 + (k - (lines.length - 1) / 2) * 34)); ctx.globalAlpha = 1;
+}
+
+/* =================== drawing: components =================== */
+function card(it, x, y, w, h, a, state) {
+  if (a <= 0) return; ctx.globalAlpha = a * (state === 'past' ? 0.5 : 1);
+  const dy = (1 - a) * 18; y += dy;
+  fillRR(x, y, w, h, 14, state === 'active' ? TH.surface2 : TH.surface);
+  if (state === 'active') { ctx.strokeStyle = hexA(TH.accent, 0.8); ctx.lineWidth = 2; rr(x, y, w, h, 14); ctx.stroke(); ctx.fillStyle = TH.accent; ctx.fillRect(x, y + 14, 5, h - 28); }
+  const ib = h - 28; fillRR(x + 18, y + 14, ib, ib, 12, hexA(TH.accent, state === 'active' ? 0.22 : 0.12));
+  icon(it[0], x + 18 + ib * 0.2, y + 14 + ib * 0.2, ib * 0.6, state === 'active' ? TH.accent : TH.muted);
+  const tx = x + 18 + ib + 20, tw = w - (tx - x) - 18; ctx.textBaseline = 'alphabetic';
+  font(650, it[2] ? 30 : 32); ctx.fillStyle = TH.text; const l1 = wrap(it[1], tw, 1, 'label');
+  if (it[2]) { ctx.fillText(l1[0], tx, y + h / 2 - 4); font(400, 23); ctx.fillStyle = TH.muted; const l2 = wrap(it[2], tw, 1, 'sub'); ctx.fillText(l2[0], tx, y + h / 2 + 28); }
+  else { ctx.textBaseline = 'middle'; ctx.fillText(l1[0], tx, y + h / 2); }
+  ctx.globalAlpha = 1;
+}
+function terminal(s, L, x, y, w, h) {
+  const a = ease((L - LEAD + 0.1) / 0.4); if (a <= 0) return; ctx.globalAlpha = a;
+  fillRR(x, y, w, h, 16, TH.term); ctx.strokeStyle = TH.line; ctx.lineWidth = 1.5; rr(x, y, w, h, 16); ctx.stroke();
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, k) => { ctx.beginPath(); ctx.arc(x + 26 + k * 22, y + 24, 7, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill(); });
+  font(500, 20); ctx.fillStyle = TH.muted; ctx.textBaseline = 'middle'; ctx.fillText(s.term || 'terminal', x + 100, y + 25);
+  font(500, 23, true); const cw = ctx.measureText('M').width, maxC = Math.floor((w - 44) / cw), lh = 33;
+  const rows = [];
+  s.cmd.forEach((line, k) => {
+    const t0 = s.cmT[k]; if (L < t0) return;
+    const isCmd = line.startsWith('$ ') || line.startsWith('# ') || line.startsWith('PS> ') || line.startsWith('>>> ');
+    let txt = line; if (isCmd) { const n = Math.floor(clamp((L - t0) / Math.max(0.5, Math.min(1.4, line.length * 0.035))) * line.length); txt = line.slice(0, n); }
+    for (let p = 0; p < Math.max(1, txt.length); p += maxC) rows.push({ txt: (p ? '  ' : '') + txt.slice(p, p + maxC - (p ? 2 : 0)), isCmd, first: p === 0, typing: isCmd && txt.length < line.length });
+  });
+  const vis = Math.floor((h - 70) / lh); const show = rows.slice(Math.max(0, rows.length - vis));
+  show.forEach((r, k) => {
+    const yy = y + 66 + k * lh;
+    if (r.isCmd && r.first) { const pre = r.txt.match(/^(\$ |# |PS> |>>> )/); const p = pre ? pre[0] : ''; ctx.fillStyle = TH.accent; ctx.fillText(p, x + 22, yy); ctx.fillStyle = TH.text; ctx.fillText(r.txt.slice(p.length), x + 22 + ctx.measureText(p).width, yy); }
+    else { ctx.fillStyle = r.isCmd ? TH.text : r.txt.startsWith('#') ? TH.muted : '#c3cad5'; ctx.fillText(r.txt, x + 22, yy); }
+    if (k === show.length - 1 && (r.typing || Math.floor(L * 2) % 2 === 0)) { const cx = x + 22 + ctx.measureText(r.txt).width + 4; ctx.fillStyle = TH.accent; ctx.fillRect(cx, yy - 13, cw * 0.6, 26); }
+  });
+  ctx.globalAlpha = 1;
+}
+function hero(name, cx, cy, r, a, L) {
+  if (a <= 0) return; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = hexA(TH.accent, 0.1); ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = hexA(TH.accent, 0.5); ctx.stroke();
+  const pr = r * (1.06 + 0.04 * Math.sin(L * Math.PI)); ctx.beginPath(); ctx.arc(cx, cy, pr, 0, Math.PI * 2); ctx.strokeStyle = hexA(TH.accent, 0.15); ctx.stroke();
+  icon(name, cx - r * 0.55, cy - r * 0.55, r * 1.1, TH.accent, 1.6); ctx.globalAlpha = 1;
+}
+
+/* =================== drawing: scene types =================== */
+function drawStep(s, L) {
+  const a0 = ease(L / 0.35), right = !!(s.cmd || s.icon);
+  const lx = 100, lw = right ? 820 : 1720;
+  chip(s.phase ? `STEP ${s.pn} / ${PHASES.length}` + (s.secName ? `  ·  ${s.secName.toUpperCase()}` : '') : (s.chip || s.name).toUpperCase(), lx, 132, a0);
+  const th = title(s.title, lx, 196, lw, a0, s.items && s.items.length > 4 ? 54 : 60);
+  if (s.items) {
+    const n = s.items.length, y0 = 196 + th + 28, avail = (right ? 870 : (s.tip ? 754 : 870)) - y0, gap = 12;
+    const ch = Math.min(100, (avail - gap * (n - 1)) / n); const ai = activeIndex(s.itT, L);
+    s.items.forEach((it, k) => card(it, lx, y0 + k * (ch + gap), lw, ch, ease((L - s.itT[k]) / 0.35), k === ai && L < s.tipT ? 'active' : (k < ai || L >= s.tipT) ? 'past' : 'active'));
+  }
+  if (s.cmd) { terminal(s, L, 980, 132, 840, s.tip ? 594 : 738); tipBar(s, L, 980, 776, 840); }
+  else if (s.icon) { hero(s.icon, 1400, 430, 210, a0, L); tipBar(s, L, 980, 776, 840); }
+  else tipBar(s, L, 100, 800, 1720);
+}
+function drawFlow(s, L) {
+  const a0 = ease(L / 0.35);
+  chip(s.phase ? `STEP ${s.pn} / ${PHASES.length}` + (s.secName ? `  ·  ${s.secName.toUpperCase()}` : '') : (s.chip || s.name).toUpperCase(), 100, 132, a0);
+  title(s.title, 100, 196, 1720, a0, 60, 1);
+  const n = s.nodes.length, gapX = 90, bw = Math.min(330, (1720 - gapX * (n - 1)) / n), bh = 210;
+  const totalW = n * bw + (n - 1) * gapX, x0 = (W - totalW) / 2, y0 = s.items ? 330 : 380; const ai = activeIndex(s.ndT, L);
+  s.nodes.forEach((nd, k) => {
+    const a = ease((L - s.ndT[k]) / 0.4); if (a <= 0) return; const x = x0 + k * (bw + gapX), act = k === ai && L < s.tipT;
+    ctx.globalAlpha = a * (act || L >= s.tipT ? 1 : 0.55);
+    fillRR(x, y0, bw, bh, 18, act ? TH.surface2 : TH.surface); ctx.strokeStyle = act ? TH.accent : TH.line; ctx.lineWidth = act ? 2.5 : 1.5; rr(x, y0, bw, bh, 18); ctx.stroke();
+    icon(nd[0], x + bw / 2 - 30, y0 + 26, 60, act ? TH.accent : TH.muted);
+    font(650, 28); ctx.fillStyle = TH.text; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const ls = wrap(nd[1], bw - 30, 2, 'node'); ls.forEach((l, j) => ctx.fillText(l, x + bw / 2, y0 + 128 + j * 32));
+    if (nd[2]) { font(400, 21); ctx.fillStyle = TH.muted; const sl = wrap(nd[2], bw - 30, 1, 'nodesub'); ctx.fillText(sl[0], x + bw / 2, y0 + 128 + ls.length * 32 + 8); }
+    ctx.textAlign = 'left';
+    if (k < n - 1) {
+      const ax = x + bw + 10, aw = gapX - 20, ay = y0 + bh / 2, ea = ease((L - s.ndT[k + 1]) / 0.4);
+      if (ea > 0) {
+        ctx.globalAlpha = ea; ctx.strokeStyle = TH.accent; ctx.lineWidth = 3; ctx.setLineDash([8, 8]); ctx.lineDashOffset = -L * 30;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + aw - 12, ay); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(ax + aw, ay); ctx.lineTo(ax + aw - 14, ay - 9); ctx.lineTo(ax + aw - 14, ay + 9); ctx.closePath(); ctx.fillStyle = TH.accent; ctx.fill();
+        if (s.edges && s.edges[k]) { font(600, 19); ctx.fillStyle = TH.muted; ctx.textAlign = 'center'; const el = wrap(s.edges[k], gapX + 50, 2, 'edge'); el.forEach((l, j) => ctx.fillText(l, ax + aw / 2, ay - 22 - (el.length - 1 - j) * 22)); ctx.textAlign = 'left'; }
+      }
+    }
+    ctx.globalAlpha = 1;
+  });
+  if (s.items) {
+    const m = s.items.length, cw = (1720 - 16 * (m - 1)) / m, ys = y0 + bh + 40, it2 = anchors(s, s.items.map(i => i[1]), 0.55, 0.8);
+    s.items.forEach((it, k) => card(it, 100 + k * (cw + 16), ys, cw, 96, ease((L - it2[k]) / 0.35), 'active'));
+  }
+  tipBar(s, L, 100, 800, 1720);
+}
+function drawCompare(s, L) {
+  const a0 = ease(L / 0.35);
+  chip(s.phase ? `STEP ${s.pn} / ${PHASES.length}` + (s.secName ? `  ·  ${s.secName.toUpperCase()}` : '') : (s.chip || s.name).toUpperCase(), 100, 132, a0);
+  title(s.title, 100, 196, 1720, a0, 58, 1);
+  const cols = s.cols, nc = cols.length, firstW = 330, cw = (1720 - firstW) / nc, rh = s.rows.length > 5 ? 66 : 78, y0 = 300;
+  ctx.globalAlpha = a0; fillRR(100, y0, 1720, rh, 12, TH.surface2); font(700, 27); ctx.fillStyle = TH.accent; ctx.textBaseline = 'middle';
+  cols.forEach((c, k) => { const l = wrap(c, cw - 30, 1, 'colh'); ctx.fillText(l[0], 100 + firstW + k * cw + 20, y0 + rh / 2); }); ctx.globalAlpha = 1;
+  const ai = activeIndex(s.rwT, L);
+  s.rows.forEach((r, k) => {
+    const a = ease((L - s.rwT[k]) / 0.35); if (a <= 0) return; const y = y0 + (k + 1) * (rh + 6);
+    ctx.globalAlpha = a * (k === ai || L >= s.tipT ? 1 : 0.6); fillRR(100, y, 1720, rh, 12, k === ai ? TH.surface2 : TH.surface);
+    if (k === ai) { ctx.fillStyle = TH.accent; ctx.fillRect(100, y + 12, 5, rh - 24); }
+    font(650, 26); ctx.fillStyle = TH.text; const l0 = wrap(r[0], firstW - 40, 1, 'rowh'); ctx.fillText(l0[0], 124, y + rh / 2);
+    font(400, 25); ctx.fillStyle = '#c9d1dc'; r.slice(1).forEach((c, j) => { const l = wrap(c, cw - 30, 1, 'cell'); ctx.fillText(l[0], 100 + firstW + j * cw + 20, y + rh / 2); });
+    ctx.globalAlpha = 1;
+  });
+  const end = y0 + (s.rows.length + 1) * (rh + 6); if (end < 790) tipBar(s, L, 100, 800, 1720);
+}
+function drawMistakes(s, L) {
+  const a0 = ease(L / 0.35); chip((s.chip || 'Common mistakes').toUpperCase(), 100, 132, a0); title(s.title || 'Common mistakes', 100, 196, 1720, a0, 60, 1);
+  const n = s.rows.length, rh = Math.min(150, (560 - 18 * (n - 1)) / n), ai = activeIndex(s.rwT, L);
+  s.rows.forEach((r, k) => {
+    const a = ease((L - s.rwT[k]) / 0.35); if (a <= 0) return; const y = 300 + k * (rh + 18);
+    ctx.globalAlpha = a * (k === ai || L > s.tipT ? 1 : 0.6);
+    fillRR(100, y, 840, rh, 14, TH.surface); fillRR(980, y, 840, rh, 14, TH.surface2);
+    icon('x', 124, y + rh / 2 - 18, 36, TH.bad, 3); icon('check', 1004, y + rh / 2 - 18, 36, TH.ok, 3);
+    font(600, 28); ctx.textBaseline = 'middle';
+    ctx.fillStyle = TH.muted; const lw = wrap(r[0], 740, 2, 'wrong'); lw.forEach((l, j) => { const yy = y + rh / 2 + (j - (lw.length - 1) / 2) * 36; ctx.fillText(l, 180, yy); ctx.fillRect(180, yy, ctx.measureText(l).width, 2); });
+    ctx.fillStyle = TH.text; const lr = wrap(r[1], 740, 2, 'right'); lr.forEach((l, j) => ctx.fillText(l, 1060, y + rh / 2 + (j - (lr.length - 1) / 2) * 36));
+    ctx.globalAlpha = 1;
+  });
+}
+function drawHook(s, L) {
+  const a = ease(L / 0.5); hero(s.icon || D.icon || 'rocket', 470, 500, 230, a, L);
+  font(700, 30); ctx.globalAlpha = a; ctx.fillStyle = TH.accent; ctx.textBaseline = 'top'; ctx.fillText((s.kicker || D.sub || '').toUpperCase(), 820, 260); ctx.globalAlpha = 1;
+  const th = title(s.title || D.title, 820, 310, 1000, a, 82, 3);
+  const qa = ease((L - LEAD - s.speech * 0.45) / 0.5);
+  if (s.q && qa > 0) { ctx.globalAlpha = qa; font(500, 36); ctx.fillStyle = TH.muted; const ql = wrap(s.q, 1000, 2, 'q'); ql.forEach((l, k) => ctx.fillText(l, 820, 330 + th + k * 46)); ctx.globalAlpha = 1; }
+  const ca = ease((L - LEAD - s.speech * 0.7) / 0.5);
+  if (ca > 0) { chip(`${PHASES.length} STEPS  ·  ${Math.round(TOTAL / 60)} MIN  ·  TRY ALONG`, 820, 760, ca); }
+}
+function drawRoadmap(s, L) {
+  const a0 = ease(L / 0.35); chip('ROADMAP', 100, 132, a0); title(s.title || `${PHASES.length} steps, start to finish`, 100, 196, 1720, a0, 60, 1);
+  const sp = Math.max(2, s.speech);
+  if (SECTIONS.length > 1 && PHASES.length > 24) {
+    const cols = 3, n = SECTIONS.length, rows = Math.ceil(n / cols), cw = (1720 - 24 * (cols - 1)) / cols, ch = Math.min(120, (540 - 18 * (rows - 1)) / rows);
+    SECTIONS.forEach((sec, k) => {
+      const at = LEAD + sp * 0.9 * k / n, a = ease((L - at) / 0.35); if (a <= 0) return;
+      const x = 100 + (k % cols) * (cw + 24), y = 310 + Math.floor(k / cols) * (ch + 18), cnt = PHASES.filter(p => p.secName === sec).length;
+      ctx.globalAlpha = a; fillRR(x, y, cw, ch, 14, TH.surface); font(800, 30); ctx.fillStyle = TH.accent; ctx.textBaseline = 'middle'; ctx.fillText(String(k + 1).padStart(2, '0'), x + 24, y + ch / 2);
+      font(650, 30); ctx.fillStyle = TH.text; ctx.fillText(wrap(sec, cw - 230, 1, 'sec')[0], x + 88, y + ch / 2 - 14); font(400, 22); ctx.fillStyle = TH.muted; ctx.fillText(`${cnt} step${cnt > 1 ? 's' : ''}`, x + 88, y + ch / 2 + 20); ctx.globalAlpha = 1;
+    });
+  } else {
+    const n = PHASES.length, cols = n > 18 ? 4 : n > 10 ? 3 : 2, rows = Math.ceil(n / cols), cw = (1720 - 20 * (cols - 1)) / cols, ch = Math.min(84, (560 - 10 * (rows - 1)) / rows);
+    PHASES.forEach((p, k) => {
+      const at = LEAD + sp * 0.9 * k / n, a = ease((L - at) / 0.3); if (a <= 0) return;
+      const c = Math.floor(k / rows), r = k % rows, x = 100 + c * (cw + 20), y = 300 + r * (ch + 10);
+      ctx.globalAlpha = a; fillRR(x, y, cw, ch, 12, TH.surface); font(800, 24); ctx.fillStyle = TH.accent; ctx.textBaseline = 'middle'; ctx.fillText(String(p.pn).padStart(2, '0'), x + 18, y + ch / 2);
+      let fz = ch < 60 ? 23 : 26; const nm = p.short || p.name; font(600, fz); while (ctx.measureText(nm).width > cw - 84 && fz > 18) font(600, --fz); ctx.fillStyle = TH.text; ctx.fillText(wrap(nm, cw - 80, 1, 'rm')[0], x + 66, y + ch / 2); ctx.globalAlpha = 1;
+    });
+  }
+}
+function drawRepos(s, L) {
+  const a0 = ease(L / 0.35); chip((s.chip || 'Practice repos').toUpperCase(), 100, 132, a0); title(s.title || 'Try these yourself', 100, 196, 1720, a0, 60, 1);
+  const n = s.repos.length, cols = 2, rows = Math.ceil(n / cols), cw = 850, ch = Math.min(108, (560 - 12 * (rows - 1)) / rows);
+  s.repos.forEach((r, k) => {
+    const a = ease((L - s.rpT[k]) / 0.35); if (a <= 0) return; const x = 100 + (k % cols) * (cw + 20), y = 300 + Math.floor(k / cols) * (ch + 12);
+    ctx.globalAlpha = a; fillRR(x, y, cw, ch, 14, TH.surface); icon(r[3] || 'git', x + 20, y + ch / 2 - 18, 36, TH.accent);
+    font(650, ch < 90 ? 24 : 27, true); ctx.fillStyle = TH.accent; ctx.textBaseline = 'alphabetic'; ctx.fillText(wrap(r[0], cw - 90, 1, 'repo')[0], x + 74, y + ch / 2 - 6);
+    font(400, ch < 90 ? 20 : 22); ctx.fillStyle = TH.muted; ctx.fillText(wrap(r[1], cw - 90, 1, 'repod')[0], x + 74, y + ch / 2 + 26); ctx.globalAlpha = 1;
+  });
+}
+function drawRecap(s, L) {
+  const a0 = ease(L / 0.35); chip('RECAP', 100, 132, a0); title(s.title || 'What you learned', 100, 196, 1720, a0, 60, 1);
+  const n = s.points.length, rh = Math.min(76, (440 - 10 * (n - 1)) / n);
+  s.points.forEach((p, k) => {
+    const a = ease((L - s.ptT[k]) / 0.35); if (a <= 0) return; const y = 296 + k * (rh + 10);
+    ctx.globalAlpha = a; fillRR(100, y, 1720, rh, 12, TH.surface); ctx.beginPath(); ctx.arc(140, y + rh / 2, 18, 0, Math.PI * 2); ctx.fillStyle = TH.ok; ctx.fill();
+    icon('check', 128, y + rh / 2 - 12, 24, '#06210f', 3.2); font(600, 28); ctx.fillStyle = TH.text; ctx.textBaseline = 'middle'; ctx.fillText(wrap(p, 1600, 1, 'pt')[0], 180, y + rh / 2); ctx.globalAlpha = 1;
+  });
+  const ca = ease((L - LEAD - s.speech * 0.8) / 0.5);
+  if (ca > 0) {
+    ctx.globalAlpha = ca; const items = [['heart', 'Like'], ['comment', `Comment "${D.keyword || 'DEVOPS'}"`], ['share', 'Share'], ['bookmark', 'Save']];
+    font(700, 32); ctx.fillStyle = TH.text; ctx.textBaseline = 'middle'; ctx.fillText(`Follow ${D.handle || '@kona.srinivas.devops'}`, 100, 812);
+    let x = 760; items.forEach(([ic, lb]) => { icon(ic, x, 794, 36, TH.accent); font(600, 26); ctx.fillStyle = TH.text; ctx.fillText(lb, x + 48, 812); x += 70 + ctx.measureText(lb).width + 40; }); ctx.globalAlpha = 1;
+  }
+}
+const DRAW = { hook: drawHook, roadmap: drawRoadmap, step: drawStep, flow: drawFlow, compare: drawCompare, mistakes: drawMistakes, repos: drawRepos, recap: drawRecap };
+function sceneAt(t) { for (let k = 0; k < SC.length; k++) if (t < starts[k] + SC[k].dur) return k; return SC.length - 1; }
+function draw(t) {
+  t = clamp(t, 0, TOTAL - 0.001); const i = sceneAt(t), s = SC[i], L = t - starts[i];
+  drawChrome(s, t); (DRAW[s.type] || drawStep)(s, L); drawCaptions(s, L);
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+}
+
+/* =================== playback state =================== */
+let t = 0, playing = false, speed = 1, loop = false, muted = false, cur = -1, last = performance.now();
+let audioMode = 'default';              // 'default' | 'mine'
+let useRec = !!VO;                      // play the recorded narration instead of the browser voice
+let REC = null, SREC = null;            // video export / studio recording
+const synth = window.speechSynthesis || null;
+let voices = [], voice = null, spk = { scene: -1, idx: -1, ts: 0 }, speakTimer = 0;
+
+function loadVoices() {
+  const recOpt = VO ? `<option value="__rec"${useRec ? ' selected' : ''}>🎙 ${D.vo.voice.replace(/</g, '')}</option>` : '';
+  if (!synth) { $('voiceSel').innerHTML = recOpt || '<option>No browser voice</option>'; return; }
+  voices = synth.getVoices().filter(v => /^en(-|_|$)/i.test(v.lang));
+  if (!voices.length) voices = synth.getVoices();
+  const score = v => (/natural|neural/i.test(v.name) ? 6 : 0) + (/google/i.test(v.name) ? 4 : 0) + (/daniel|alex|aaron|arthur|guy|ryan|male/i.test(v.name) ? 3 : 0) + (/en-(us|gb|in)/i.test(v.lang) ? 1 : 0);
+  voices.sort((a, b) => score(b) - score(a));
+  const saved = localStorage.getItem('kd-voice');
+  voice = voices.find(v => v.name === saved) || voices[0] || null;
+  $('voiceSel').innerHTML = recOpt + (voices.map(v => `<option${!useRec && v === voice ? ' selected' : ''}>${v.name.replace(/</g, '')}</option>`).join('') || (recOpt ? '' : '<option>Default voice</option>'));
+}
+loadVoices(); if (synth) synth.onvoiceschanged = loadVoices;
+$('voiceSel').onchange = e => {
+  if (e.target.value === '__rec') useRec = true;
+  else { useRec = false; voice = voices.find(v => v.name === e.target.value) || voice; localStorage.setItem('kd-voice', voice ? voice.name : ''); }
+  restartSpeech();
+};
+
+function speechWanted() {
+  if (!synth || muted) return false;
+  if (REC) return REC.opt.audio === 'default';
+  if (SREC) return false;
+  return playing && !(audioMode === 'mine' && MINE.url) && !(useRec && VO);
+}
+function stopSpeech() { clearTimeout(speakTimer); if (synth) synth.cancel(); }
+function speakFrom(i, local) {
+  stopSpeech(); if (!speechWanted()) return;
+  const s = SC[i], ws = s.words; if (!ws.length) return;
+  let k = local < LEAD ? 0 : ws.findIndex(w => w.t1 > local); if (k < 0) return;
+  const sents = []; let cur = [];
+  for (let j = k; j < ws.length; j++) { cur.push(j); if (/[.!?]$/.test(ws[j].w) || cur.length >= 28) { sents.push(cur); cur = []; } }
+  if (cur.length) sents.push(cur);
+  const sp = REC ? 1 : speed;
+  const go = () => {
+    if (!speechWanted() || sceneAt(t) !== i) return;
+    sents.forEach(idx => {
+      const u = new SpeechSynthesisUtterance(idx.map(j => ws[j].w).join(' '));
+      if (voice) { u.voice = voice; u.lang = voice.lang; } u.rate = Math.min(2, 0.95 * sp);
+      const offs = []; let c = 0; idx.forEach(j => { offs.push(c); c += ws[j].w.length + 1; });
+      u.onstart = () => { spk = { scene: i, idx: idx[0], ts: performance.now() }; };
+      u.onboundary = e => { if (e.name && e.name !== 'word') return; let m = 0; while (m + 1 < offs.length && offs[m + 1] <= e.charIndex) m++; spk = { scene: i, idx: idx[m], ts: performance.now() }; };
+      synth.speak(u);
+    });
+  };
+  const delay = local < LEAD ? (LEAD - local) / sp * 1000 : 0;
+  if (delay > 0) speakTimer = setTimeout(go, delay); else go();
+}
+function restartSpeech() { const i = sceneAt(t); speakFrom(i, t - starts[i]); }
+
+const voEls = [];
+function voEl(i) {
+  if (!VO || !VO[i]) return null;
+  if (!voEls[i]) { const a = new Audio(); a.preload = 'auto'; a.src = VO[i].f; voEls[i] = a; }
+  return voEls[i];
+}
+function syncVoice() {
+  if (!VO) return;
+  const i = sceneAt(t), ct = t - starts[i] - LEAD, a = voEl(i); voEl(i + 1);  // also preload the next scene
+  voEls.forEach((e, k) => { if (e && k !== i && !e.paused) e.pause(); });
+  const want = useRec && playing && !muted && !REC && !SREC && !(audioMode === 'mine' && MINE.url);
+  if (!a) return;
+  if (!want || ct < 0 || ct > VO[i].d) { if (!a.paused) a.pause(); return; }
+  a.playbackRate = speed; a.preservesPitch = true;
+  if (Math.abs(a.currentTime - ct) > 0.3) a.currentTime = ct;
+  if (a.paused) a.play().catch(() => {});
+}
+let VOBUF = null;
+async function voiceBuffer() {           // the whole narration on one track, placed at each scene's start
+  if (VOBUF && VOBUF.total === TOTAL) return VOBUF.buf;
+  const SR = 48000, off = new OfflineAudioContext(1, Math.ceil(TOTAL * SR), SR);
+  await Promise.all(VO.map(async (c, i) => {
+    if (!c) return;
+    const r = await fetch(c.f); if (!r.ok) throw new Error(`scene ${i + 1}: HTTP ${r.status}`);
+    const src = off.createBufferSource(); src.buffer = await off.decodeAudioData(await r.arrayBuffer());
+    src.connect(off.destination); src.start(starts[i] + LEAD);
+  }));
+  const buf = await off.startRendering(); VOBUF = { buf, total: TOTAL }; return buf;
+}
+const mineEl = $('mine');
+function syncMine() {
+  const want = !REC && !SREC && playing && !muted && audioMode === 'mine' && MINE.url;
+  if (!want) { if (!mineEl.paused) mineEl.pause(); return; }
+  mineEl.playbackRate = speed; mineEl.preservesPitch = true;
+  if (Math.abs(mineEl.currentTime - t) > 0.3) mineEl.currentTime = Math.min(t, mineEl.duration || t);
+  if (mineEl.paused) mineEl.play().catch(() => {});
+}
+
+function setPlaying(p) {
+  if (p && t >= TOTAL - 0.05) seekTo(0);
+  playing = p; last = performance.now(); $('tap').hidden = true;
+  $('bPlay').textContent = p ? '❚❚ Pause' : '▶ Play';
+  if (p) restartSpeech(); else stopSpeech();
+}
+function seekTo(v) { t = clamp(v, 0, TOTAL - 0.001); cur = sceneAt(t); if (playing) restartSpeech(); }
+function setSpeed(n) { speed = n; document.querySelectorAll('#speeds button').forEach(b => b.classList.toggle('on', +b.dataset.s === n)); if (playing) restartSpeech(); }
+
+function frame(now) {
+  const dt = Math.min(0.25, (now - last) / 1000); last = now;
+  if (REC) t = REC.clock();
+  else if (playing) { t += dt * (SREC ? 1 : speed); if (t >= TOTAL) { if (loop && !SREC) { t = 0; cur = -1; } else { t = TOTAL - 0.001; setPlaying(false); } } }
+  const i = sceneAt(t); if (i !== cur) { cur = i; if (playing || REC) speakFrom(i, t - starts[i]); }
+  draw(t); syncMine(); syncVoice(); if (REC) recTick(); if (SREC) studioTick(); if (!$('studio').hidden) { meterTick(); prompterTick(); }
+  ui(); requestAnimationFrame(frame);
+}
+let uiLast = 0;
+function ui() {
+  const now = performance.now(); if (now - uiLast < 120) return; uiLast = now;
+  if (document.activeElement !== $('seek')) $('seek').value = Math.round(t / TOTAL * 10000);
+  $('time').textContent = `${fmt(t)} / ${fmt(TOTAL)} @${speed}×`;
+  const s = SC[sceneAt(t)]; $('sceneName').textContent = `Scene ${s.i + 1}/${SC.length} · ${s.name}${s.phase ? ` · Step ${s.pn}/${PHASES.length}` : ''}${audioMode === 'mine' && MINE.url ? ' · 🎙 your voice' : ''}`;
+}
+function drawTicks() { const tk = $('ticks'); if (!tk) return; tk.innerHTML = starts.map(st => `<i style="left:${st / TOTAL * 100}%"></i>`).join(''); }
+
+/* =================== controls =================== */
+function toast(m, ms = 2600) { const e = $('toast'); e.textContent = m; e.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('show'), ms); }
+$('tap').onclick = () => setPlaying(true);
+$('bPlay').onclick = () => setPlaying(!playing);
+$('bRestart').onclick = () => { seekTo(0); setPlaying(true); };
+$('speeds').onclick = e => { const b = e.target.closest('button'); if (b) setSpeed(+b.dataset.s); };
+$('bLoop').onclick = () => { loop = !loop; $('bLoop').classList.toggle('on', loop); };
+function setMuted(m) { muted = m; $('bMute').textContent = m ? '🔇' : '🔊'; $('bMute').classList.toggle('on', m); if (m) stopSpeech(); else if (playing) restartSpeech(); }
+$('bMute').onclick = () => setMuted(!muted);
+$('bCC').onclick = () => { ccOn = !ccOn; $('bCC').classList.toggle('on', ccOn); };
+$('seek').oninput = e => { $('tap').hidden = true; seekTo(e.target.value / 10000 * TOTAL); };
+$('bFs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : $('stagewrap').requestFullscreen && $('stagewrap').requestFullscreen();
+$('bClean').onclick = () => document.body.classList.toggle('clean');
+$('bStudio').onclick = () => { $('studio').hidden = !$('studio').hidden; renderTakes(); };
+$('bMore').onclick = () => $('more').classList.toggle('open');
+document.addEventListener('click', e => { if (!e.target.closest('#more')) $('more').classList.remove('open'); });
+cv.onclick = () => { if (!REC && !SREC) setPlaying(!playing); };
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, select, textarea') || REC) { if (REC && e.key === 'Escape') cancelRec(); return; }
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); setPlaying(!playing); }
+  else if ('1234'.includes(k) && k.length === 1) setSpeed(+k);
+  else if (k === 'arrowright') seekTo(t + 5); else if (k === 'arrowleft') seekTo(t - 5);
+  else if (k === 'r') { seekTo(0); setPlaying(true); } else if (k === 'l') $('bLoop').click(); else if (k === 'm') $('bMute').click();
+  else if (k === 'c') $('bCC').click(); else if (k === 'f') $('bFs').click(); else if (k === 'h') $('bClean').click();
+});
+function saveBlob(blob, name) { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); }
+const FILE = `kona-srinivas-devops-${D.id}-1920x1080`;
+function timedScript() { return SC.map(s => `${fmtTC(starts[s.i])}-${fmtTC(starts[s.i] + s.dur)} | ${s.name} | ${s.n}`).join('\n'); }
+$('mScript').onclick = async () => { const txt = timedScript(); try { await navigator.clipboard.writeText(txt); toast('✓ Timed script copied'); } catch (e) { saveBlob(new Blob([txt], { type: 'text/plain' }), FILE + '-script.txt'); toast('Clipboard blocked: saved as a .txt file instead'); } };
+$('mSrt').onclick = () => {
+  const ts = x => { const h = Math.floor(x / 3600), m = Math.floor(x % 3600 / 60), s = Math.floor(x % 60), ms = Math.round((x % 1) * 1000); return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`; };
+  let n = 0; const out = [];
+  SC.forEach(s => s.chunks.forEach(c => { const a = starts[s.i] + s.words[c[0]].t0, b = starts[s.i] + s.words[c[c.length - 1]].t1; out.push(`${++n}\n${ts(a)} --> ${ts(b)}\n${c.map(k => s.words[k].w).join(' ')}\n`); }));
+  saveBlob(new Blob([out.join('\n')], { type: 'text/plain' }), FILE + '.srt');
+};
+$('mCues').onclick = () => saveBlob(new Blob([JSON.stringify(SC.map(s => ({ scene: s.name, start: +starts[s.i].toFixed(2), end: +(starts[s.i] + s.dur).toFixed(2), dur: +s.dur.toFixed(2), narration: s.n })), null, 2)], { type: 'application/json' }), FILE + '-cues.json');
+$('mFrame').onclick = () => cv.toBlob(b => saveBlob(b, `${FILE}-${Math.round(t)}s.png`), 'image/png');
+
+/* =================== Voice Studio =================== */
+const MINE = { takes: {}, full: null, buf: null, url: '', ready: false };
+let micStream = null, micCtx = null, micAn = null, micPeak = 0, selScene = 0;
+function getAC() { return micCtx || (micCtx = new (window.AudioContext || window.webkitAudioContext)()); }
+async function listMics() {
+  const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput');
+  const saved = localStorage.getItem('kd-mic') || 'default';
+  $('micSel').innerHTML = devs.length ? devs.map((d, k) => `<option value="${d.deviceId}"${d.deviceId === saved ? ' selected' : ''}>${(d.label || 'Microphone ' + (k + 1)).replace(/</g, '')}</option>`).join('') : '<option>No microphone found</option>';
+  $('micSel').disabled = !devs.length; return devs;
+}
+async function openMic() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('micMsg').textContent = 'Microphone not available in this browser/context. Open the file in Chrome.'; return false; }
+  if (micStream) micStream.getTracks().forEach(tr => tr.stop());
+  const id = $('micSel').disabled ? undefined : $('micSel').value;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: id && id !== 'default' ? { exact: id } : undefined, noiseSuppression: $('cNs').checked, echoCancellation: $('cEc').checked, autoGainControl: $('cAgc').checked } });
+  } catch (e) {
+    $('micMsg').textContent = e.name === 'NotAllowedError' ? 'Permission denied: allow the microphone in the address bar.' : e.name === 'NotFoundError' ? 'No microphone found.' : 'Mic error: ' + e.message;
+    return false;
+  }
+  await listMics(); const tr = micStream.getAudioTracks()[0]; const lbl = tr.getSettings().deviceId;
+  if (lbl) [...$('micSel').options].forEach(o => { if (o.value === lbl) o.selected = true; });
+  tr.onended = () => { $('micMsg').textContent = 'Microphone disconnected. Pick another one.'; };
+  const ac = getAC(); micAn = ac.createAnalyser(); micAn.fftSize = 1024; ac.createMediaStreamSource(micStream).connect(micAn);
+  $('micMsg').textContent = '✓ ' + (tr.label || 'Microphone on'); $('micOn').textContent = 'Microphone on'; return true;
+}
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { if (micStream) listMics(); });
+$('micOn').onclick = openMic;
+$('micSel').onchange = () => { localStorage.setItem('kd-mic', $('micSel').value); openMic(); };
+['cNs', 'cEc', 'cAgc'].forEach(id => $(id).onchange = () => micStream && openMic());
+const mctx = $('meter').getContext('2d'); const mbuf = new Float32Array(1024);
+function meterTick() {
+  mctx.clearRect(0, 0, 360, 14); if (!micAn) return; micAn.getFloatTimeDomainData(mbuf);
+  let sum = 0, pk = 0; for (const v of mbuf) { sum += v * v; pk = Math.max(pk, Math.abs(v)); }
+  const rms = Math.sqrt(sum / mbuf.length), db = 20 * Math.log10(rms + 1e-9); micPeak = Math.max(pk, micPeak * 0.97);
+  const w = clamp((db + 60) / 60) * 360; mctx.fillStyle = pk > 0.98 ? '#f85149' : db > -12 ? '#d29922' : '#3fb950'; mctx.fillRect(0, 0, w, 14);
+  mctx.fillStyle = '#fff'; mctx.fillRect(clamp((20 * Math.log10(micPeak + 1e-9) + 60) / 60) * 356, 0, 3, 14);
+  $('meterMsg').textContent = pk > 0.98 ? 'Clipping: lower your input gain or move back' : db < -45 ? 'Too quiet: move closer to the mic' : `Level ${db.toFixed(0)} dB · good`;
+}
+function prompterTick() {
+  const i = SREC ? (SREC.i === 'full' ? sceneAt(t) : SREC.i) : selScene, s = SC[i]; if (!s) return;
+  const L = t - starts[i], wi = (SREC || playing) && sceneAt(t) === i ? curWord(s, L) : -1;
+  const key = i + ':' + wi; if (prompterTick.k === key) return; prompterTick.k = key;
+  $('prompter').innerHTML = `<b>${s.i + 1}. ${s.name}</b><br>` + s.words.map((w, k) => `<span class="${k === wi ? 'cw' : k > wi && wi >= 0 ? 'pw' : ''}">${w.w.replace(/</g, '')}</span>`).join(' ');
+}
+function renderTakes() {
+  $('takeRows').innerHTML = SC.map(s => {
+    const tk = MINE.takes[s.i], len = tk ? tk.duration - ($('cTrim').checked ? trimStart(tk) : 0) : 0, over = tk && len > s.dur + 0.6;
+    const st = tk ? (over ? `<span class="st-warn">⚠ ${len.toFixed(1)}s</span>` : `<span class="st-ok">✓ ${len.toFixed(1)}s</span>`) : MINE.full ? '<span class="st-ok">full take</span>' : '<span class="st-bad">✗</span>';
+    return `<tr data-i="${s.i}" class="${s.i === selScene ? 'sel' : ''}"><td>${s.i + 1}</td><td>${s.name.replace(/</g, '')}</td><td>${s.dur.toFixed(1)}s</td><td>${st}</td><td>${tk ? `<button data-a="play">▶</button><button data-a="del">✕</button>` : ''}${over ? '<button data-a="fit">Fit</button>' : ''}</td></tr>`;
+  }).join('');
+}
+$('takeRows').onclick = e => {
+  const tr = e.target.closest('tr'); if (!tr) return; const i = +tr.dataset.i, a = e.target.dataset.a;
+  selScene = i; prompterTick.k = '';
+  if (a === 'play') { const ac = getAC(), src = ac.createBufferSource(); src.buffer = MINE.takes[i]; src.connect(ac.destination); src.start(); }
+  else if (a === 'del') { delete MINE.takes[i]; MINE.ready = false; }
+  else if (a === 'fit') { SC[i].fit = MINE.takes[i].duration - ($('cTrim').checked ? trimStart(MINE.takes[i]) : 0) + 0.6; retime(); toast(`Scene ${i + 1} extended to fit your take. Later scenes moved.`); MINE.ready = false; }
+  else { seekTo(starts[i]); }
+  renderTakes();
+};
+async function countdown() { const c = $('count'); c.hidden = false; for (const n of [3, 2, 1]) { c.textContent = n; await new Promise(r => setTimeout(r, 800)); } c.hidden = true; }
+async function startStudioRec(which) {
+  if (REC || SREC) return; if (!micStream && !(await openMic())) return;
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+  if (!mime) return toast('Audio recording is not supported in this browser');
+  setPlaying(false); seekTo(which === 'full' ? 0 : starts[which]); ccForce = true; await countdown();
+  const mr = new MediaRecorder(micStream, { mimeType: mime }), parts = [];
+  mr.ondataavailable = e => e.data.size && parts.push(e.data);
+  SREC = { i: which, mr, end: which === 'full' ? TOTAL : starts[which] + SC[which].dur + 0.3 };
+  mr.onstart = () => { playing = true; last = performance.now(); $('bPlay').textContent = '❚❚ Pause'; };
+  mr.onstop = async () => {
+    const was = SREC; SREC = null; ccForce = false; playing = false; $('bPlay').textContent = '▶ Play'; $('recStop').disabled = true;
+    try {
+      const buf = await getAC().decodeAudioData(await new Blob(parts, { type: mime }).arrayBuffer());
+      if (was.i === 'full') { MINE.full = buf; toast(`Full take recorded (${buf.duration.toFixed(1)} s)`); }
+      else { MINE.takes[was.i] = buf; toast(`Scene ${was.i + 1} take recorded (${buf.duration.toFixed(1)} s)`); if (was.i + 1 < SC.length) selScene = was.i + 1; }
+      MINE.ready = false; renderTakes();
+    } catch (e) { toast('Could not decode the recording: ' + e.message); }
+  };
+  $('recStop').disabled = false; mr.start(250);
+}
+function studioTick() { if (t >= SREC.end - 0.001 || (SREC.i === 'full' && t >= TOTAL - 0.01)) stopStudioRec(); }
+function stopStudioRec() { if (SREC && SREC.mr.state !== 'inactive') SREC.mr.stop(); }
+$('recScene').onclick = () => startStudioRec(selScene);
+$('recFull').onclick = () => startStudioRec('full');
+$('recStop').onclick = stopStudioRec;
+$('upAudio').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const buf = await getAC().decodeAudioData(await f.arrayBuffer()); MINE.full = buf; MINE.ready = false; renderTakes();
+    const diff = buf.duration - TOTAL;
+    $('upMsg').innerHTML = `${f.name.replace(/</g, '')}: ${buf.duration.toFixed(2)} s · video ${TOTAL.toFixed(2)} s` + (Math.abs(diff) > 0.3 ? ` <br><button id="stretch">Stretch visuals to audio</button> <button id="keep">Keep timings</button>` : ' · ✓ lengths match');
+    if ($('stretch')) { $('stretch').onclick = () => { STRETCH = STRETCH * buf.duration / TOTAL; retime(); $('upMsg').textContent = `Visuals stretched to ${TOTAL.toFixed(2)} s`; renderTakes(); }; $('keep').onclick = () => { $('upMsg').textContent = 'Keeping the original timings'; }; }
+  } catch (err) { $('upMsg').textContent = 'Could not read that audio file: ' + err.message; }
+  e.target.value = '';
+};
+function trimStart(buf) {
+  const d = buf.getChannelData(0), th = Math.pow(10, -45 / 20), pad = Math.round(0.08 * buf.sampleRate); let k = 0;
+  while (k < d.length && Math.abs(d[k]) < th) k++; return Math.max(0, k - pad) / buf.sampleRate;
+}
+$('merge').onclick = async () => {
+  if (!MINE.full && !Object.keys(MINE.takes).length) return toast('Record a take or upload audio first');
+  const SR = 48000, len = Math.ceil(TOTAL * SR), off = new OfflineAudioContext(1, len, SR), nudge = (+$('nudge').value || 0) / 1000;
+  const place = (buf, at, from = 0, until) => {
+    const src = off.createBufferSource(); src.buffer = buf; const g = off.createGain(); src.connect(g); g.connect(off.destination);
+    const st = Math.max(0, at + nudge), dur = Math.max(0, (until !== undefined ? until : buf.duration) - from);
+    g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(1, st + 0.01); g.gain.setValueAtTime(1, Math.max(st + 0.01, st + dur - 0.01)); g.gain.linearRampToValueAtTime(0, st + dur);
+    src.start(st, from, dur);
+  };
+  if (MINE.full) {
+    let segStart = 0;
+    SC.forEach(s => { if (MINE.takes[s.i]) { if (starts[s.i] > segStart) place(MINE.full, segStart, segStart, Math.min(starts[s.i], MINE.full.duration)); segStart = starts[s.i] + s.dur; } });
+    if (segStart < MINE.full.duration) place(MINE.full, segStart, segStart, MINE.full.duration);
+  }
+  Object.entries(MINE.takes).forEach(([i, b]) => { const from = $('cTrim').checked ? trimStart(b) : 0; place(b, starts[i], from, Math.min(b.duration, from + SC[i].dur + 0.3)); });
+  const out = await off.startRendering(), d = out.getChannelData(0);
+  let pk = 0; for (let k = 0; k < d.length; k++) pk = Math.max(pk, Math.abs(d[k]));
+  const clipped = pk >= 0.999;
+  if ($('cNorm').checked && pk > 0) { const g = Math.pow(10, -1 / 20) / pk; for (let k = 0; k < d.length; k++) d[k] *= g; }
+  const rmsWin = (a, b) => { const i0 = Math.floor(a * SR), i1 = Math.min(d.length, Math.floor(b * SR)); let s = 0; for (let k = i0; k < i1; k++) s += d[k] * d[k]; return 20 * Math.log10(Math.sqrt(s / Math.max(1, i1 - i0)) + 1e-9); };
+  const missing = SC.filter(s => s.words.length && rmsWin(starts[s.i], starts[s.i] + s.dur) < -50).map(s => s.i + 1);
+  const overs = SC.filter(s => MINE.takes[s.i] && MINE.takes[s.i].duration - ($('cTrim').checked ? trimStart(MINE.takes[s.i]) : 0) > s.dur + 0.6).map(s => s.i + 1);
+  const avg = rmsWin(0, TOTAL);
+  MINE.buf = out; if (MINE.url) URL.revokeObjectURL(MINE.url); MINE.url = URL.createObjectURL(wavBlob(out)); mineEl.src = MINE.url;
+  MINE.ready = !missing.length && !overs.length && avg > -35;
+  const row = (ok, txt) => `<div class="${ok ? 'st-ok' : 'st-bad'}">${ok ? '✓' : '✗'} ${txt}</div>`;
+  $('checks').innerHTML = row(!missing.length, missing.length ? `Silent scenes: ${missing.slice(0, 12).join(', ')}${missing.length > 12 ? '…' : ''}` : 'Every narrated scene has voice') +
+    row(!overs.length, overs.length ? `Takes longer than their scene: ${overs.join(', ')} (click Fit in the table)` : 'No take runs past its scene') +
+    row(!clipped, clipped ? 'Clipping detected: re-record those parts a little quieter' : 'No clipping') +
+    row(avg > -35, `Average level ${avg.toFixed(1)} dBFS${avg > -35 ? '' : ' (too quiet)'}`) +
+    row(Math.abs(out.duration - TOTAL) < 0.1, `Length ${out.duration.toFixed(2)} s = video ${TOTAL.toFixed(2)} s`) +
+    `<p class="hint">${MINE.ready ? '✅ Ready. "Custom voice-over" is now the default in Download video.' : 'Fix the ✗ items (or record the missing scenes) to enable the custom-voice download. You can still preview.'}</p>`;
+  $('useMine').disabled = false; $('wav').disabled = false; toast('Voice-over merged');
+};
+$('useMine').onclick = () => { audioMode = audioMode === 'mine' ? 'default' : 'mine'; $('useMine').textContent = audioMode === 'mine' ? '🔊 Back to default voice' : '▶ Preview with my voice'; if (playing) restartSpeech(); if (audioMode === 'mine' && !playing) setPlaying(true); };
+$('wav').onclick = () => MINE.buf && saveBlob(wavBlob(MINE.buf), FILE + '-voiceover.wav');
+function wavBlob(buf) {
+  const d = buf.getChannelData(0), n = d.length, ab = new ArrayBuffer(44 + n * 2), v = new DataView(ab), sr = buf.sampleRate;
+  const ws = (o, s) => { for (let k = 0; k < s.length; k++) v.setUint8(o + k, s.charCodeAt(k)); };
+  ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); ws(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let k = 0; k < n; k++) v.setInt16(44 + k * 2, Math.max(-1, Math.min(1, d[k])) * 0x7fff, true);
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
+/* =================== Download video =================== */
+function pickMime() { return ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)); }
+$('bDl').onclick = () => {
+  const mineOk = !!(MINE.buf && MINE.ready), mineAny = !!MINE.buf;
+  const opts = [
+    ...(VO ? [['rec', `Narration: ${D.vo.voice.replace(/</g, '')}`, 'The recorded voice-over, in sync with every scene. Recommended.', true]] : []),
+    ['mine', 'Custom voice-over (Voice Studio)', mineOk ? 'Your merged voice, perfectly in sync. Recommended.' : mineAny ? 'Merged, but the readiness checklist has ✗ items. Allowed, but check them first.' : 'Not available yet: record or upload in Voice Studio, then Merge.', mineAny],
+    ['default', 'Default voice (browser speech)', 'Uses tab-audio capture: pick "This tab" and tick "Also share tab audio". Not every browser lets this voice be recorded; if no sound is captured the export stops and tells you.', !!synth],
+    ['none', 'No voice (captions only)', 'Always works. Good for muted feeds, or to add audio later in an editor.', true],
+  ];
+  const def = mineOk ? 'mine' : VO ? 'rec' : synth ? 'default' : 'none';
+  $('dlOpts').innerHTML = opts.map(([v, l, d, en]) => `<label class="opt${en ? '' : ' dis'}"><input type="radio" name="dla" value="${v}"${v === def ? ' checked' : ''}${en ? '' : ' disabled'}><span><b>${l}</b><small>${d}</small></span></label>`).join('');
+  const m = pickMime();
+  $('dlInfo').innerHTML = !m ? '⚠ This browser cannot record video (MediaRecorder unavailable). Use desktop Chrome or Edge.' :
+    `Records in real time: about <b>${Math.ceil(TOTAL / 60)} min</b>. Keep this tab visible. Format: <b>${m.includes('mp4') ? 'MP4' : 'WebM'}</b>.` +
+    (m.includes('mp4') ? '' : `<br>To convert to MP4: <code>ffmpeg -i ${FILE}.webm -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac -movflags +faststart ${FILE}.mp4</code>`) +
+    `<br>Merge your own audio later: <code>ffmpeg -i ${FILE}-captions.mp4 -i voiceover.wav -map 0:v -map 1:a -c:v copy -c:a aac -shortest ${FILE}.mp4</code>`;
+  $('dlGo').disabled = !m; $('dlModal').hidden = false;
+};
+$('dlCancel').onclick = () => { $('dlModal').hidden = true; };
+$('dlGo').onclick = () => { const a = (document.querySelector('input[name=dla]:checked') || {}).value || 'none'; $('dlModal').hidden = true; exportVideo({ audio: a, fps: +$('dlFps').value, br: +$('dlBr').value, cc: $('dlCC').checked }); };
+async function exportVideo(opt) {
+  const mime = pickMime(); if (!mime || !cv.captureStream) return toast('Video export needs desktop Chrome or Edge');
+  setPlaying(false); stopSpeech(); if (SREC) return;
+  let recBuf = null;
+  if (opt.audio === 'rec') {
+    toast('Preparing the narration…', 8000);
+    try { recBuf = await voiceBuffer(); }
+    catch (e) { return toast(`Could not load the narration audio (${e.message}). Open the video from the website or the offline file.`, 8000); }
+  }
+  const stream = cv.captureStream(opt.fps); let ac = null, src = null, disp = null, an = null;
+  if (opt.audio === 'mine' || opt.audio === 'rec') {
+    ac = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 }); const dest = ac.createMediaStreamDestination();
+    src = ac.createBufferSource(); src.buffer = opt.audio === 'rec' ? recBuf : MINE.buf; src.connect(dest); stream.addTrack(dest.stream.getAudioTracks()[0]);
+  } else if (opt.audio === 'default') {
+    try { disp = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: { suppressLocalAudioPlayback: false }, preferCurrentTab: true, selfBrowserSurface: 'include', systemAudio: 'include' }); }
+    catch (e) { return toast('Sharing was cancelled. Nothing recorded.'); }
+    const at = disp.getAudioTracks()[0];
+    if (!at) { disp.getTracks().forEach(x => x.stop()); return toast('No tab audio was shared. Choose "This tab" with "Also share tab audio", or use Voice Studio / captions only.', 6000); }
+    stream.addTrack(at); ac = new (window.AudioContext || window.webkitAudioContext)(); an = ac.createAnalyser(); an.fftSize = 2048; ac.createMediaStreamSource(new MediaStream([at])).connect(an);
+  }
+  const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: opt.br * 1e6, audioBitsPerSecond: 192000 }), parts = [];
+  mr.ondataavailable = e => e.data.size && parts.push(e.data);
+  const ccWas = ccOn; ccOn = opt.cc;
+  REC = { opt, mr, ac, an, disp, parts, peak: 0, cancel: false, ccWas, clock: () => 0, firstVoice: (starts[SC.findIndex(s => s.words.length)] || 0) + 9 };
+  t = 0; cur = -1; $('recbar').hidden = false;
+  await new Promise(r => { mr.onstart = r; mr.start(1000); });
+  if (src) { const t0 = ac.currentTime + 0.05; src.start(t0); REC.clock = () => Math.max(0, ac.currentTime - t0); }
+  else { const p0 = performance.now(); REC.clock = () => (performance.now() - p0) / 1000; }
+  mr.onstop = () => {
+    const r = REC; finishRec();
+    if (r.cancel) return toast(r.reason || 'Recording cancelled', r.reason ? 7000 : 2600);
+    const ext = mime.includes('mp4') ? 'mp4' : 'webm', tag = r.opt.audio === 'mine' ? 'custom-voice' : r.opt.audio === 'rec' ? 'voice' : r.opt.audio === 'default' ? 'default-voice' : 'captions';
+    saveBlob(new Blob(parts, { type: mime.split(';')[0] }), `${FILE}-${tag}.${ext}`);
+    toast(`✓ Saved ${FILE}-${tag}.${ext} (audio: ${tag.replace('-', ' ')})`, 6000);
+  };
+}
+const abuf = new Float32Array(2048);
+function recTick() {
+  const r = REC; $('recTxt').textContent = `Recording ${fmt(t)} / ${fmt(TOTAL)} (${Math.floor(t / TOTAL * 100)}%) · ${r.opt.audio === 'mine' ? 'your voice' : r.opt.audio === 'rec' ? 'narration' : r.opt.audio === 'default' ? 'default voice' : 'captions only'} · keep this tab visible`;
+  if (r.an) { r.an.getFloatTimeDomainData(abuf); let pk = 0; for (const v of abuf) pk = Math.max(pk, Math.abs(v)); r.peak = Math.max(r.peak, pk);
+    if (t > r.firstVoice && r.peak < 0.01) { r.reason = 'Your browser did not allow the default voice to be recorded (no sound captured). Record your voice in Voice Studio, upload a TTS file, or download with captions only.'; cancelRec(); return; } }
+  if (t >= TOTAL - 0.02 && r.mr.state === 'recording') r.mr.stop();
+}
+function cancelRec() { if (!REC) return; REC.cancel = true; if (REC.mr.state !== 'inactive') REC.mr.stop(); else finishRec(); }
+function finishRec() {
+  const r = REC; if (!r) return; REC = null; stopSpeech(); ccOn = r.ccWas;
+  if (r.disp) r.disp.getTracks().forEach(x => x.stop()); if (r.ac) r.ac.close().catch(() => {});
+  $('recbar').hidden = true; playing = false; $('bPlay').textContent = '▶ Play';
+}
+$('recCancel').onclick = cancelRec;
+
+/* =================== init & automation hooks =================== */
+retime();
+$('ttl').textContent = `${D.title} · ${fmt(TOTAL)} · ${PHASES.length} steps`;
+document.title = `${D.title} · kona-srinivas-devops`;
+if (D.home) $('home').href = D.home;
+window.__voiceBuffer = async () => { const b = await voiceBuffer(), d = b.getChannelData(0), SR = b.sampleRate;
+  const rms = (a, z) => { let s = 0, n = 0; for (let k = Math.floor(a * SR); k < Math.min(d.length, z * SR); k++) { s += d[k] * d[k]; n++; } return 20 * Math.log10(Math.sqrt(s / Math.max(1, n)) + 1e-9); };
+  return { duration: b.duration, total: TOTAL, scenes: SC.map(s => +rms(starts[s.i], starts[s.i] + s.dur).toFixed(1)) }; };
+window.__reel = { id: D.id, voice: !!VO, total: TOTAL, width: W, height: H, fps: 30, scenes: SC.map(s => ({ name: s.name, type: s.type, start: starts[s.i], dur: s.dur, words: s.words.length })), phases: PHASES.length };
+window.__frameAt = (sec, type = 'image/jpeg', q = 0.92) => { draw(sec); return cv.toDataURL(type, q); };
+window.__overflow = () => [...OVER.values()];
+window.__drawAll = () => { SC.forEach(s => draw(starts[s.i] + s.dur - 0.05)); return [...OVER.values()]; };
+draw(0); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

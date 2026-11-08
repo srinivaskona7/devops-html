@@ -1,0 +1,110 @@
+{
+ "voice": "Kona Srinivas (Fish Audio)",
+ "model": "s2.1-pro-free",
+ "clips": [
+  {
+   "f": "audio/docker/01-c2575c3e58.mp3",
+   "d": 17.502
+  },
+  {
+   "f": "audio/docker/02-5a158258e0.mp3",
+   "d": 10.893
+  },
+  {
+   "f": "audio/docker/03-5a42662c41.mp3",
+   "d": 20.454
+  },
+  {
+   "f": "audio/docker/04-20e0c7c3db.mp3",
+   "d": 17.502
+  },
+  {
+   "f": "audio/docker/05-01908764c9.mp3",
+   "d": 21.473
+  },
+  {
+   "f": "audio/docker/06-72252acbe7.mp3",
+   "d": 18.103
+  },
+  {
+   "f": "audio/docker/07-d2033002e7.mp3",
+   "d": 19.096
+  },
+  {
+   "f": "audio/docker/08-a6b891f3b3.mp3",
+   "d": 18.233
+  },
+  {
+   "f": "audio/docker/09-fcd8f49214.mp3",
+   "d": 13.479
+  },
+  {
+   "f": "audio/docker/10-6fc0ed76cb.mp3",
+   "d": 18.077
+  },
+  {
+   "f": "audio/docker/11-2e6bd688d2.mp3",
+   "d": 19.592
+  },
+  {
+   "f": "audio/docker/12-17f62c3dbb.mp3",
+   "d": 22.152
+  },
+  {
+   "f": "audio/docker/13-29c4b0f2de.mp3",
+   "d": 19.592
+  },
+  {
+   "f": "audio/docker/14-4257c41ec4.mp3",
+   "d": 18.521
+  },
+  {
+   "f": "audio/docker/15-4aaeb5a208.mp3",
+   "d": 19.043
+  },
+  {
+   "f": "audio/docker/16-c0c6c1e15e.mp3",
+   "d": 18.077
+  },
+  {
+   "f": "audio/docker/17-018b0b31bc.mp3",
+   "d": 17.946
+  },
+  {
+   "f": "audio/docker/18-956d2592be.mp3",
+   "d": 16.953
+  },
+  {
+   "f": "audio/docker/19-cf28fb5d7c.mp3",
+   "d": 17.345
+  },
+  {
+   "f": "audio/docker/20-5bfc7403b9.mp3",
+   "d": 18.887
+  },
+  {
+   "f": "audio/docker/21-45ec8fd4aa.mp3",
+   "d": 19.2
+  },
+  {
+   "f": "audio/docker/22-6e5d02c2b7.mp3",
+   "d": 20.036
+  },
+  {
+   "f": "audio/docker/23-aaf1f10e9a.mp3",
+   "d": 16.327
+  },
+  {
+   "f": "audio/docker/24-7f3115068f.mp3",
+   "d": 17.607
+  },
+  {
+   "f": "audio/docker/25-3d7320c426.mp3",
+   "d": 18.416
+  },
+  {
+   "f": "audio/docker/26-d0c9f13371.mp3",
+   "d": 26.122
+  }
+ ]
+}

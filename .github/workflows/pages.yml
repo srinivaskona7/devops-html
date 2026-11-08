@@ -1,3 +1,5 @@
+# Builds the video library and deploys it to GitHub Pages on every push to main.
+# One-time setup: Settings > Pages > Build and deployment > Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 
 on:
@@ -7,34 +9,49 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+
+      - uses: actions/setup-python@v7
+        with: {python-version: "3.14"}
+
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+
+      - name: Build the site
+        run: python3 build.py
+
+      - name: Browser test (playback, narration sync, offline files, downloads)
+        run: |
+          pip install -q playwright
+          python -m playwright install --with-deps chromium
+          python tools/test_site.py
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with: {path: site}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-26.04
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Add .nojekyll
-        run: touch .nojekyll
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: .
-
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v5
