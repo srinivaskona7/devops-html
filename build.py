@@ -30,7 +30,7 @@ ENGINE = (ROOT / "engine.html").read_text()
 _ic = ENGINE.split("const IC = {")[1].split("};")[0]
 ICONS = set(re.findall(r"^\s{2}(\w+): '", _ic, re.M)) | set(re.findall(r",\s(\w+): '", _ic))
 WPS, PAD, LEAD = 2.15, 1.4, 0.35
-ORDER = ["git", "gitops", "kubernetes", "docker", "linux", "shell", "python", "ansible", "terraform", "jenkins", "azure-devops",
+ORDER = ["ec2-request", "git", "gitops", "kubernetes", "docker", "linux", "shell", "python", "ansible", "terraform", "jenkins", "azure-devops",
          "istio", "cncf", "prometheus", "grafana", "elk", "aws", "azure", "gcp"]
 SITE_URL = "https://srinivaskona7.github.io/devops-html/"
 
@@ -193,11 +193,19 @@ def card(r):
     extra = (f'<a href="{dl}-voiceover.mp3" download>🎧 MP3</a>' if r["voice"] else "") + \
             f'<a href="{dl}-subtitles.srt" download>CC .srt</a><a href="{dl}-script.txt" download>📝 Script</a>'
     badge = '<span class="v on">🎙 Narrated</span>' if r["voice"] else '<span class="v">🔈 Browser voice</span>'
+    guide = f'<a href="{r["guide"]}">📖 Guide & diagrams</a>' if r.get("guide") else ""
     return f"""<article class="c" style="--a:{r['accent']}">
 <a class="main" href="{r['id']}.html"><span class="k">{html.escape(r['cat'])}</span><b>{html.escape(r['title'])}</b>
 <span class="m">{int(r['dur'] // 60)}:{int(r['dur'] % 60):02d} · {r['scenes']} scenes</span>{badge}
 <span class="s">{html.escape(r['sub'])}</span></a>
-<div class="dl"><a href="{dl}.html" download>⬇ Offline file</a>{extra}</div></article>"""
+<div class="dl"><a href="{dl}.html" download>⬇ Offline file</a>{extra}{guide}</div></article>"""
+
+
+def section(title, sub, rows):
+    if not rows:
+        return ""
+    return (f'<section><h2>{html.escape(title)}</h2><p class="sec">{html.escape(sub)}</p>'
+            f'<main>{"".join(card(r) for r in rows)}</main></section>')
 
 
 def index(rows, zip_mb):
@@ -216,7 +224,8 @@ main{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:
 .v{align-self:flex-start;font-size:12px;padding:2px 8px;border-radius:999px;background:#151b2a;color:#9aa4b2}.v.on{background:rgba(63,185,80,.15);color:#3fb950}
 .dl{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px}.dl a{font-size:12.5px;color:#c9d1dc;text-decoration:none;padding:4px 8px;border-radius:8px;background:#151b2a}
 .dl a:hover{color:#fff;background:#1f2738}.help{color:#9aa4b2;padding-bottom:10px}.help summary{cursor:pointer;color:#e6e9ef;font-weight:700}
-.help li{margin:4px 0}footer{text-align:center;color:#9aa4b2;padding-bottom:30px}"""
+.help li{margin:4px 0}section{max-width:1300px;margin:auto}section h2{margin:22px 24px 0;font-size:21px}
+p.sec{margin:2px 24px 0}section main{padding-top:12px}footer{text-align:center;color:#9aa4b2;padding-bottom:30px}"""
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DevOps video library · kona-srinivas-devops</title><meta name="description" content="{len(rows)} hands-on DevOps explainer videos with narration, captions and offline downloads.">
 <style>{css}</style></head><body>
@@ -224,7 +233,8 @@ main{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:
 <p>{len(rows)} hands-on explainer videos · {int(total // 3600)} h {int(total % 3600 // 60)} min · {narrated} narrated with a recorded voice, the rest use your browser's voice. Captions, 1–4× speed and MP4 export in every video.</p>
 <div class="top"><a class="btn" href="downloads/devops-videos-offline.zip" download>⬇ Download all for offline ({zip_mb:.0f} MB zip)</a>
 <a class="btn s" href="https://github.com/srinivaskona7/devops-html">Source on GitHub</a></div></header>
-<main>{''.join(card(r) for r in rows)}</main>
+{section("Process guides & knowledge", "How one request really works, step by step: a video plus a diagram guide.", [r for r in rows if r.get("kind") == "process"])}
+{section("Courses", "Hands-on DevOps courses, from basics to advanced.", [r for r in rows if r.get("kind") != "process"])}
 <details class="help"><summary>How to listen and download</summary><ul>
 <li><b>Sound:</b> press ▶ Play once; browsers start audio only after a click. Use the 🔊 button or M to mute.</li>
 <li><b>Voice:</b> narrated videos play the recorded voice; pick a browser voice in the voice menu if you prefer.</li>
@@ -275,6 +285,7 @@ def main():
             voiceover_mp3(d, vo, SITE / "downloads" / f"{d['id']}-voiceover.mp3")
         dur = duration(d, vo)
         rows.append(dict(id=d["id"], title=d["title"], sub=d.get("sub", ""), cat=d.get("cat", ""), accent=d["accent"],
+                         kind=d.get("kind", "video"), guide=d.get("guide", ""),
                          dur=dur, scenes=len(d["scenes"]), voice=bool(vo)))
         print(f"{d['id']:<14} {int(dur // 60):>2}:{int(dur % 60):02d}  scenes {len(d['scenes']):>3}  "
               f"{'narrated' if vo else 'browser voice'}")
@@ -284,6 +295,8 @@ def main():
     if only:
         return
     rows.sort(key=lambda r: ORDER.index(r["id"]) if r["id"] in ORDER else 99)
+    if (ROOT / "guides").exists():  # companion knowledge pages (diagrams, glossaries) for process guides
+        shutil.copytree(ROOT / "guides", SITE / "guides", dirs_exist_ok=True)
     zpath = SITE / "downloads" / "devops-videos-offline.zip"
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for r in rows:
