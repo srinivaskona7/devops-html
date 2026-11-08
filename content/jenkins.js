@@ -10,7 +10,7 @@ module.exports = {
       n: 'Picture an assembly line. Each commit is raw material arriving. Each stage is a station: build, test, scan, and package. And quality gates are the inspectors, who stop the line the moment a defect appears, before it reaches customers.' },
 
     { sec: 'Foundations', short: 'CI vs CD', title: 'CI, continuous delivery and deployment', cols: ['What happens', 'Ends with'],
-      rows: [['Continuous integration', 'Every commit is built and tested', 'A green build'], ['Continuous delivery', 'Every green build is release-ready', 'One-click release'], ['Continuous deployment', 'Every green build ships automatically', 'Code in production']],
+      rows: [['Continuous integration', 'Every commit is built and tested', 'A green build'], ['Continuous delivery', 'Every green build is release-ready', 'One-click release'], ['Continuous deploy', 'Every green build ships automatically', 'Code in production']],
       n: 'Step one: three terms. Continuous integration builds and tests every commit. Continuous delivery keeps every green build ready to release with one click. Continuous deployment goes further, and ships every green build automatically.' },
     { sec: 'Foundations', short: 'Architecture', title: 'How Jenkins is built',
       nodes: [['server', 'Controller', 'UI, scheduling, config'], ['cpu', 'Agents', 'run the builds'], ['box', 'Executors', 'parallel slots'], ['layers', 'Plugins', '1,800+ integrations']], edges: ['dispatches', 'provide', 'extend'],

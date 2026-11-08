@@ -10,6 +10,7 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+FONT = __import__("os").environ.get("LAYOUT_FONT", "")
 sys.path.insert(0, str(ROOT))
 import build  # noqa: E402
 from playwright.async_api import async_playwright  # noqa: E402
@@ -26,7 +27,10 @@ async def main(ids):
             for vid in ids:
                 d = build.load(ROOT / "content" / f"{vid}.js")
                 f = pathlib.Path(tmp) / f"{vid}.html"
-                f.write_text(build.page(d, None, offline=True))
+                html = build.page(d, None, offline=True)
+                if FONT:  # check with a specific font, e.g. the metric-compatible Arial used on Linux CI and Windows
+                    html = html.replace("const SANS = '", "const SANS = '" + FONT + ", ", 1)
+                f.write_text(html)
                 errs.clear()
                 await pg.goto(f.as_uri())
                 await pg.wait_for_function("window.__reel")

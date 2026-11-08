@@ -32,12 +32,18 @@ jobs:
       - name: Build the site
         run: python3 build.py
 
-      - name: Browser test (playback, narration sync, offline files, downloads)
+      - name: Install browser and fonts for tests
         run: |
           pip install -q playwright
           python -m playwright install --with-deps chromium
-          python tools/check_layout.py
-          python tools/test_site.py
+          sudo apt-get install -y -qq fonts-liberation fonts-dejavu-core >/dev/null
+
+      - name: Layout check (no cut-off text in any scene)
+        run: python tools/check_layout.py
+        env: { LAYOUT_FONT: Arial }
+
+      - name: Site test (playback, sync, offline files, downloads)
+        run: python tools/test_site.py
 
       - uses: actions/configure-pages@v6
 
