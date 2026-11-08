@@ -51,7 +51,10 @@ window.MediaRecorder.isTypeSupported = MR.isTypeSupported.bind(MR);
 
 
 async def main():
-    narrated = [p.stem for p in (ROOT / "audio").iterdir() if (p / "manifest.json").exists()]
+    # narrated = the build shipped its audio (build.py skips narration whose script changed since it was recorded)
+    shipped = SITE / "audio"
+    narrated = sorted(p.name for p in shipped.iterdir() if p.is_dir() and any(p.glob("*.mp3"))) if shipped.exists() else []
+    print(f"narrated videos shipped: {narrated or 'none (all use the browser voice)'}")
     async with async_playwright() as p:
         b = await p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"])
         ctx = await b.new_context(viewport={"width": 1500, "height": 950}, accept_downloads=True)

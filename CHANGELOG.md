@@ -1,3 +1,9 @@
+# Docker deep dive: 10 to 33 minutes (8 Nov 2026)
+
+Docker from Scratch grew from 26 to 62 scenes (56 steps): container internals (namespaces, cgroups, runtime stack, PID 1), images in depth (manifests, containerd image store, tag strategy), cache-friendly and production Dockerfiles, BuildKit mounts, multi-platform builds and Bake, build checks, CI caching, network drivers and firewalls (including the experimental nftables backend), Compose profiles, Watch and CI use, security (least privilege, rootless, scan/SBOM/sign, base images, secrets, daemon hardening), health checks, logs, limits, debugging, and what changed in Engine 29. Facts come from the Docker Engine 29 release notes (29.0 to 29.9.3). `docker` and `hadolint` were not installed locally, so commands were not executed.
+
+**Narration:** the original 26 recorded clips no longer match the longer script, so Docker now uses the browser voice. The old clips remain in `audio/docker/`; re-run `voice.py docker` to record the new script. `tools/test_site.py` now treats a video as narrated only when the build shipped its audio, so the recorded-voice playback tests are skipped until a video is re-recorded.
+
 # Kubernetes deep dive: 10.9 to 61 minutes (8 Nov 2026)
 
 Kubernetes from Scratch grew from 30 to 109 scenes (103 steps). Manifests shown on screen were validated with kubeconform (strict, Kubernetes 1.34 schemas plus the Gateway API CRD catalog) and `helm lint`; feature facts come from the Kubernetes 1.35, 1.36 and 1.37 changelogs. A live cluster was not available, so command output is representative.
