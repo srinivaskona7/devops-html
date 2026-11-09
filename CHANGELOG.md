@@ -1,3 +1,9 @@
+# Linux deep dive: 20 to 49 minutes (8 Nov 2026)
+
+Linux Commands grew from 50 to 87 scenes: boot and filesystem layout, systemd in depth (service units, sandboxing, timers, dependencies, journalctl), storage (GPT, LVM, ext4 vs XFS, finding what fills a disk, RAID, SMART, restic backups), networking (ip, nftables, DNS, a debugging ladder, tcpdump, sysctl tuning), performance (USE method, CPU/memory/disk analysis, strace, perf, eBPF), hardening (SSH, sudo, SELinux/AppArmor, audit, patching, kernel settings), containers from the kernel (namespaces, cgroups v2, capabilities, seccomp), and a troubleshooting playbook.
+
+**Not executed:** this Mac cannot run Linux userland tools, so commands come from man pages and standard behaviour, and output shown is representative. Version-specific claims were avoided on purpose.
+
 # Terraform deep dive: 10 to 29 minutes, plus a command verifier (8 Nov 2026)
 
 Terraform from Scratch grew from 26 to 57 scenes. New sections: language deep dive (plan phases, validation, object types, expressions, preconditions and checks, lifecycle, for_each vs count, functions), state deep dive (inspection, S3 backend with `use_lockfile`, splitting state, `moved`, `import` and `removed` blocks, recovery), modules deep dive (interfaces, sources, layout, version pinning), testing and security (`terraform test`, mocks, policy, ephemeral values, credentials, role separation), delivery (PR pipeline, apply on merge, drift check, Terraform vs OpenTofu, actions and query, 1.10 to 1.17 summary).
