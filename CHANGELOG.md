@@ -1,3 +1,11 @@
+# Shell scripting deep dive: 10 to 28 minutes (9 Nov 2026)
+
+Shell Scripting for DevOps grew from 26 to 50 scenes: how the shell expands a command, which shell to use, strict mode and its traps, quoting, parameter expansion, arrays, `[[ ]]`, heredocs, a production script built step by step (skeleton, `getopts`, atomic lock, write-then-rename, pruning), Bats tests, a mutation check, ShellCheck, CI, debugging, portability between macOS and Linux, safe building blocks, and when to move to Python or Ansible.
+
+**Executed locally:** bash 5.2.15 (a static macOS build, because macOS ships 3.2), ShellCheck 0.11.0, shfmt 3.14.1, Bats 1.14.0. `examples/shell/backup.sh` runs for real, including its error exit codes (2 usage, 1 missing source, 3 locked) and a SIGTERM mid-backup (exit 130, lock released, no partial file, no archive). `set -e`/`pipefail`/`-u`, quoting, parameter-expansion, array and `[[ ]]` snippets were all run. ShellCheck: the script has zero findings; a deliberately bad script produced SC2035, SC2086, SC2115, SC2154, SC2164, SC2046, SC2005, SC2006. 9 of 9 Bats tests pass.
+
+**Testing found a real bug:** the first version's exit trap removed the lock directory even when another run owned it, so a refused run could delete the running instance's lock. Fixed with an ownership flag and a Bats test; removing the fix makes exactly that test fail. Two of my own tests were also wrong at first (a background job ignores SIGINT, and one test used the wrong lock path) and were corrected before anything went into the video. **Not executed:** cron and systemd timer examples; the CI workflow is representative.
+
 # Ansible deep dive: 10 to 29 minutes (8 Nov 2026)
 
 Ansible from Scratch grew from 26 to 54 scenes: how a task executes, idempotency, YAML inventory and merged host variables, variable precedence, project layout, `ansible.cfg` settings, dry runs, proving idempotency, a complete role, control flow, targeting and rolling updates, Jinja2, roles vs collections, role design and argument specs, import vs include, Vault, ansible-lint, auto-fix, a test pyramid, dynamic inventory, connections without public SSH, performance, execution environments, a CI pipeline, and what changed in ansible-core 2.19 to 2.22.
