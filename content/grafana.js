@@ -2,7 +2,7 @@ module.exports = {
   id: 'grafana', title: 'Grafana from Scratch', sub: 'Data sources, dashboards, variables, alerting and dashboards as code', cat: 'Observability',
   accent: '#f46800', icon: 'dash', target: 31, keyword: 'GRAFANA', tags: '#grafana #observability #monitoring',
   scenes: [
-    { type: 'hook', title: 'Grafana from Scratch', kicker: 'Dashboards · 32 minutes', q: 'How do you find the cause of a spike in three clicks?',
+    { type: 'hook', title: 'Grafana from Scratch', kicker: 'Dashboards · 31 minutes', q: 'How do you find the cause of a spike in three clicks?',
       n: 'A wall of numbers does not help anyone at three in the morning. A good dashboard does. Grafana turns metrics, logs, and traces into dashboards and alerts that people actually use. In ten minutes, we connect data sources, build a dashboard with variables, set up alerting, and manage it all as code. And you will see how to find the cause of a spike in three clicks.' },
     { type: 'roadmap', n: 'Here is the plan: how Grafana is built, data sources and the query model, panels and transformations in depth, variables and dashboard design, alerting with notification policies, logs, traces and correlations, provisioning and dashboards as code with Git Sync, operating Grafana at scale with security and high availability, and what changed in Grafana twelve and thirteen.' },
     { type: 'step', x: 1, chip: 'Analogy', title: 'A car dashboard for your systems', icon: 'gauge',
