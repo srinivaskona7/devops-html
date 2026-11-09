@@ -1,3 +1,11 @@
+# Python deep dive: 20 to 40 minutes (9 Nov 2026)
+
+Python Scripting for DevOps grew from 46 to 73 scenes: uv projects, lockfiles and PEP 723 inline dependencies, the 2026 toolchain, f-strings, pattern matching, dataclasses, exception chaining and groups, pathlib and timezone-aware datetimes, safe YAML/JSON/CSV, pydantic validation, regex, safe `subprocess` (with a live injection demo), logging and argparse, threads vs processes vs asyncio, retries, HTTP hygiene, testing AWS code with moto, pagination, cloud client patterns, and a complete project (`examples/python/shopctl`) with Typer, pytest, ruff, mypy and a built wheel.
+
+**Executed locally:** Python 3.14.7, uv 0.11.8, pytest 9.2, ruff 0.17.4, mypy 2.4.1 (strict), Typer 0.28, httpx 0.28, pydantic 2.14, moto 5. `shopctl`: **22 tests pass at 98% coverage**; `ruff check` and `ruff format` clean; `mypy --strict` clean; the wheel builds and the installed command runs (a health check against pypi.org returned 200). About 40 language snippets were run for the exact output shown. **Testing found real issues, all fixed before they went into the video:** S3 bucket names need at least 3 characters; `httpx.MockTransport` responses have no `.elapsed`; ruff flagged B008 and long lines (B008 fixed with `Annotated`, not a `noqa`); mypy needed `types-PyYAML` and `boto3-stubs`. A mutation check (making `prune()` delete the newest archives) fails exactly `test_prune_keeps_newest`.
+
+**Not executed:** real AWS, Azure, Google Cloud, Kubernetes, Docker and SSH calls (no credentials, cluster or daemon); those scenes are labelled representative. The local uv (0.11.8) is older than the latest release (0.13.7), so no scene claims it is current. The CI workflow is representative; its commands were run locally.
+
 # Shell scripting deep dive: 10 to 28 minutes (9 Nov 2026)
 
 Shell Scripting for DevOps grew from 26 to 50 scenes: how the shell expands a command, which shell to use, strict mode and its traps, quoting, parameter expansion, arrays, `[[ ]]`, heredocs, a production script built step by step (skeleton, `getopts`, atomic lock, write-then-rename, pruning), Bats tests, a mutation check, ShellCheck, CI, debugging, portability between macOS and Linux, safe building blocks, and when to move to Python or Ansible.
