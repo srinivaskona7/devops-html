@@ -1,3 +1,9 @@
+# Grafana deep dive: 10 to 31 minutes (8 Nov 2026)
+
+Grafana from Scratch grew from 26 to 59 scenes: architecture and the LGTM stack, running Grafana, the query model (queries, expressions, transformations), correlations, exemplars and derived fields, `$__rate_interval`, choosing panels, thresholds and overrides, transformations, panel performance, dashboard JSON, design rules, variables, dynamic dashboards, annotations, alerting architecture, alert rules as code, notification policies, alert quality, LogQL and TraceQL, drilldown apps, Grafana Alloy, provisioning, Git Sync, Terraform/Grizzly/jsonnet, CI checks, authentication and RBAC, high availability, monitoring Grafana, the Grafana 13 breaking-changes list, and a Grafana 12 to 13.3 summary.
+
+**Verified locally:** provisioning YAML (data sources, dashboard providers, alert rules) parses; the dashboard JSON parses; both dashboard PromQL queries were parsed with promtool 3.16 after substituting variables. **From the official Grafana 12 and 13 "What's new" pages and release notes, not executed:** all version-specific features and the 13.0 breaking-changes titles. No Grafana server could be run in the sandbox. Grafana Alloy configuration is representative and was not run.
+
 # Prometheus deep dive: 10 to 32 minutes (8 Nov 2026)
 
 Prometheus from Scratch grew from 26 to 59 scenes: scrape cycle and TSDB internals, staleness and `absent()`, metric design (RED/USE, naming, classic vs native histograms), relabelling and blackbox probing, PromQL in depth (rate/irate/increase, vector matching, aggregation, subqueries, alert-style queries, slow queries), SLO burn-rate alerting with unit tests, Alertmanager routing/inhibition/silences/HA, the Prometheus Operator and kube-prometheus-stack, cardinality control, remote write and long-term storage, OpenTelemetry, and a Prometheus 3.0 to 3.16 changelog summary.

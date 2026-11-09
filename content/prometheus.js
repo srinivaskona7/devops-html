@@ -2,7 +2,7 @@ module.exports = {
   id: 'prometheus', title: 'Prometheus from Scratch', sub: 'Metrics, PromQL, exporters, alerts and Kubernetes monitoring', cat: 'Observability',
   accent: '#e6522c', icon: 'chart', target: 32, keyword: 'PROMQL', tags: '#prometheus #monitoring #sre',
   scenes: [
-    { type: 'hook', title: 'Prometheus from Scratch', kicker: 'Monitoring · 45 minutes', q: 'Why do you almost always wrap counters in rate()?',
+    { type: 'hook', title: 'Prometheus from Scratch', kicker: 'Monitoring · 32 minutes', q: 'Why do you almost always wrap counters in rate()?',
       n: 'Logs tell you what happened. Metrics tell you how much, how often, and how fast, all the time. Prometheus, now on version three, is the open-source standard for metrics, and the second project ever to graduate from the CNCF. In ten minutes, we run it, write PromQL, and set up alerts, and you will learn why you almost always wrap a counter in rate.' },
     { type: 'roadmap', n: 'Here is the plan: how Prometheus stores and scrapes data, designing good metrics, PromQL in depth, recording rules and SLO burn-rate alerts, Alertmanager routing and unit tests for your alerts, monitoring Kubernetes with the Prometheus Operator, scaling with cardinality control, remote write and long term storage, and what changed in Prometheus three point zero to three point sixteen.' },
     { type: 'step', x: 1, chip: 'Analogy', title: 'A nurse doing rounds', icon: 'heart',
