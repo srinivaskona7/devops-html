@@ -1,0 +1,41 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata: { name: shop-gw, namespace: shop }
+spec:
+  selector: { istio: ingressgateway }
+  servers:
+    - port: { number: 443, name: https, protocol: HTTPS }
+      tls: { mode: SIMPLE, credentialName: shop-tls }
+      hosts: ["shop.example.com"]
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata: { name: api, namespace: shop }
+spec:
+  host: api.shop.svc.cluster.local
+  trafficPolicy:
+    tls: { mode: ISTIO_MUTUAL }
+    connectionPool:
+      tcp: { maxConnections: 100 }
+      http: { http1MaxPendingRequests: 50, maxRequestsPerConnection: 10 }
+    outlierDetection: { consecutive5xxErrors: 5, interval: 10s, baseEjectionTime: 30s, maxEjectionPercent: 50 }
+  subsets:
+    - { name: v1, labels: { version: v1 } }
+    - { name: v2, labels: { version: v2 } }
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata: { name: api, namespace: shop }
+spec:
+  hosts: ["api.shop.svc.cluster.local", "shop.example.com"]
+  gateways: ["mesh", "shop-gw"]
+  http:
+    - match: [{ headers: { x-canary: { exact: "true" } } }]
+      route: [{ destination: { host: api.shop.svc.cluster.local, subset: v2 } }]
+    - route:
+        - { destination: { host: api.shop.svc.cluster.local, subset: v1 }, weight: 90 }
+        - { destination: { host: api.shop.svc.cluster.local, subset: v2 }, weight: 10 }
+      timeout: 3s
+      retries: { attempts: 3, perTryTimeout: 1s, retryOn: "5xx,reset,connect-failure" }
+      mirror: { host: api.shop.svc.cluster.local, subset: v2 }
+      mirrorPercentage: { value: 10.0 }

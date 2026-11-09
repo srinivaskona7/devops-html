@@ -1,0 +1,37 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata: { name: default, namespace: istio-system }
+spec: { mtls: { mode: STRICT } }
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: { name: deny-all, namespace: shop }
+spec: {}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: { name: api-allow-frontend, namespace: shop }
+spec:
+  selector: { matchLabels: { app: api } }
+  action: ALLOW
+  rules:
+    - from: [{ source: { principals: ["cluster.local/ns/shop/sa/frontend"] } }]
+      to: [{ operation: { methods: ["GET", "POST"], paths: ["/api/*"] } }]
+---
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata: { name: jwt, namespace: shop }
+spec:
+  selector: { matchLabels: { app: api } }
+  jwtRules:
+    - { issuer: "https://idp.example.com", jwksUri: "https://idp.example.com/.well-known/jwks.json" }
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: { name: require-jwt, namespace: shop }
+spec:
+  selector: { matchLabels: { app: api } }
+  action: ALLOW
+  rules:
+    - from: [{ source: { requestPrincipals: ["https://idp.example.com/*"] } }]
+      when: [{ key: "request.auth.claims[groups]", values: ["shoppers"] }]

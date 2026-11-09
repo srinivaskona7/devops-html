@@ -1,0 +1,6 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata: { name: mesh-default, namespace: istio-system }
+spec:
+  tracing: [{ randomSamplingPercentage: 1.0 }]
+  accessLogging: [{ providers: [{ name: envoy }], filter: { expression: "response.code >= 400" } }]
