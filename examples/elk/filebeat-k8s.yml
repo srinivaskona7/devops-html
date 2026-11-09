@@ -1,0 +1,15 @@
+filebeat.autodiscover:
+  providers:
+    - type: kubernetes
+      node: ${NODE_NAME}
+      hints.enabled: true
+      hints.default_config:
+        type: filestream
+        id: container-${data.kubernetes.container.id}
+        paths: ["/var/log/containers/*${data.kubernetes.container.id}.log"]
+        parsers: [ { container: ~ } ]
+processors:
+  - add_kubernetes_metadata: ~
+output.elasticsearch:
+  hosts: ["https://es.example.com:9200"]
+  api_key: "${ES_API_KEY}"

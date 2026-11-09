@@ -1,0 +1,3 @@
+{"@version":"1","host":{"name":"srinivas-MacBook-Pro"},"tags":["_grokparsefailure"],"event":{"original":"this line is not an access log at all"},"message":"this line is not an access log at all","log":{"file":{"path":"/tmp/es/p/access.log"}},"@timestamp":"2026-11-09T17:51:39.662400Z"}
+{"referrer":"-","verb":"post","http_version":"1.1","agent":"Mozilla/5.0","client_ip":"203.0.113.9","@timestamp":"2026-11-09T10:15:03.000Z","tags":["server_error"],"took":1.503,"path":"/api/checkout","status":502,"bytes":0}
+{"referrer":"-","verb":"get","http_version":"1.1","agent":"curl/8.7","client_ip":"203.0.113.7","@timestamp":"2026-11-09T10:15:02.000Z","took":0.042,"path":"/api/orders/42","status":200,"bytes":512}

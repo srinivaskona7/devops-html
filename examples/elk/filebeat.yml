@@ -1,0 +1,28 @@
+filebeat.inputs:
+  - type: filestream
+    id: app-json
+    paths: ["/var/log/app/*.json"]
+    parsers:
+      - ndjson: { target: "", add_error_key: true, overwrite_keys: true }
+    fields: { env: prod }
+    fields_under_root: true
+  - type: filestream
+    id: nginx-access
+    paths: ["/var/log/nginx/access.log"]
+    parsers:
+      - multiline: { type: pattern, pattern: '^\d', negate: true, match: after }
+
+processors:
+  - add_host_metadata: ~
+  - drop_event:
+      when: { equals: { url.path: "/healthz" } }
+  - drop_fields: { fields: ["agent.ephemeral_id", "ecs.version"], ignore_missing: true }
+
+output.elasticsearch:
+  hosts: ["https://es.example.com:9200"]
+  api_key: "${ES_API_KEY}"
+  index: "logs-app-%{+yyyy.MM.dd}"
+
+setup.template.name: "logs-app"
+setup.template.pattern: "logs-app-*"
+logging.level: warning

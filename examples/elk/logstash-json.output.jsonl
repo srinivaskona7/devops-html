@@ -1,0 +1,2 @@
+{"level":"INFO","service":"orders","duration_ms":12,"@timestamp":"2026-11-09T10:15:05.300Z","message":"order created","order_id":42}
+{"level":"ERROR","service":"payments","duration_ms":87,"tags":["needs_attention"],"trace_id":"4bf92f3577b34da6a3ce929d0e0e4736","@timestamp":"2026-11-09T10:15:04.120Z","message":"card declined"}
