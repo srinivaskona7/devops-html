@@ -1,0 +1,11 @@
+node('linux') {
+  try {
+    stage('Build') { checkout scm; sh 'make build' }
+    stage('Retry flaky') { retry(3) { sh './flaky.sh' } }
+  } catch (err) {
+    currentBuild.result = 'FAILURE'
+    throw err
+  } finally {
+    cleanWs()
+  }
+}

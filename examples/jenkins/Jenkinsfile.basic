@@ -1,0 +1,29 @@
+pipeline {
+  agent { label 'linux' }
+  options { timeout(time: 30, unit: 'MINUTES'); disableConcurrentBuilds(); buildDiscarder(logRotator(numToKeepStr: '20')); timestamps() }
+  environment { IMAGE = "registry.example.com/shop/api" }
+  stages {
+    stage('Test') {
+      steps { sh 'make test' }
+      post { always { junit 'reports/**/*.xml' } }
+    }
+    stage('Build image') {
+      when { anyOf { branch 'main'; buildingTag() } }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'registry', usernameVariable: 'U', passwordVariable: 'P')]) {
+          sh '''
+            echo "$P" | docker login registry.example.com -u "$U" --password-stdin
+            docker build -t "$IMAGE:$GIT_COMMIT" .
+            docker push "$IMAGE:$GIT_COMMIT"
+          '''
+        }
+      }
+    }
+    stage('Deploy') {
+      when { branch 'main' }
+      input { message 'Deploy to production?'; submitter 'release-managers' }
+      steps { sh 'kubectl set image deploy/api api=$IMAGE:$GIT_COMMIT' }
+    }
+  }
+  post { failure { echo 'build failed' } cleanup { cleanWs() } }
+}

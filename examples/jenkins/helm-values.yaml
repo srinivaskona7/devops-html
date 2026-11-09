@@ -1,0 +1,16 @@
+controller:
+  numExecutors: 0
+  JCasC:
+    defaultConfig: false
+    configScripts:
+      welcome: |
+        jenkins:
+          systemMessage: "Managed by Helm and JCasC"
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
+    - configuration-as-code
+    - credentials-binding
+  resources: { requests: { cpu: 500m, memory: 1Gi }, limits: { memory: 2Gi } }
+persistence: { enabled: true, size: 20Gi }

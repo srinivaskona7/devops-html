@@ -1,0 +1,19 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: build
+            image: golang:1.26
+            command: [sleep]
+            args: [infinity]
+            resources: { requests: { cpu: 500m, memory: 512Mi }, limits: { memory: 1Gi } }
+      '''
+      defaultContainer 'build'
+    }
+  }
+  stages { stage('Build') { steps { sh 'go build ./...' } } }
+}

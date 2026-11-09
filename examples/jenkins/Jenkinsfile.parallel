@@ -1,0 +1,13 @@
+pipeline {
+  agent none
+  stages {
+    stage('Checks') {
+      failFast true
+      parallel {
+        stage('Unit')  { agent { docker { image 'python:3.14-slim' } } steps { sh 'pytest -q' } }
+        stage('Lint')  { agent { docker { image 'python:3.14-slim' } } steps { sh 'ruff check .' } }
+        stage('Scan')  { agent any steps { sh 'trivy fs --exit-code 1 --severity HIGH,CRITICAL .' } }
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+jenkins:
+  systemMessage: "Managed by Configuration as Code. Do not edit in the UI."
+  numExecutors: 0
+  mode: EXCLUSIVE
+  securityRealm:
+    oidc:
+      clientId: "${OIDC_CLIENT_ID}"
+      clientSecret: "${OIDC_CLIENT_SECRET}"
+      wellKnownOpenIDConfigurationUrl: "https://idp.example.com/.well-known/openid-configuration"
+      userNameField: "email"
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: "admin"
+            permissions: ["Overall/Administer"]
+            entries: [{ group: "platform-admins" }]
+          - name: "developer"
+            permissions: ["Overall/Read", "Job/Build", "Job/Read", "Job/Cancel"]
+            entries: [{ group: "developers" }]
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+  clouds:
+    - kubernetes:
+        name: "k8s"
+        serverUrl: "https://kubernetes.default"
+        namespace: "jenkins-agents"
+        jenkinsUrl: "http://jenkins.jenkins.svc:8080"
+        podRetention: "never"
+security:
+  scriptApproval:
+    approvedSignatures: []
+unclassified:
+  location:
+    url: "https://jenkins.example.com/"
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "registry"
+              username: "${REGISTRY_USER}"
+              password: "${REGISTRY_PASSWORD}"
