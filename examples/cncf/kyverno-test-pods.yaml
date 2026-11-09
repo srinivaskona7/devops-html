@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: { name: good }
+spec: { containers: [ { name: app, image: nginx, resources: { limits: { memory: 128Mi, cpu: 250m } } } ] }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: no-limits }
+spec: { containers: [ { name: app, image: nginx } ] }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: cpu-only }
+spec: { containers: [ { name: app, image: nginx, resources: { limits: { cpu: 250m } } } ] }

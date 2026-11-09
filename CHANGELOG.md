@@ -1,3 +1,13 @@
+# CNCF deep dive: 10 to 25 minutes (9 Nov 2026)
+
+The CNCF Landscape video grew from 26 to 45 scenes: maturity levels with real counts, which popular tools are not CNCF projects, what graduated since 2025, versions of the core projects, Helm in practice, Gateway API with cert-manager, Cilium, Argo CD vs Flux, KEDA, the observability picture, Kyverno, OPA, cosign, Gatekeeper vs Kyverno, Crossplane v2, Backstage, an adoption order, a due-diligence checklist and a final checklist. Reference files are in `examples/cncf/`.
+
+**Facts come from the live cncf/landscape `landscape.yml` (last commit 9 Nov 2026):** 41 graduated, 38 incubating, 154 sandbox, 28 archived, and the exact accepted, incubating and graduated dates of every project named. Latest releases come from the GitHub API on 9 Nov 2026. **Recent graduations now reflected:** in-toto (Feb 2025), Knative (Sep 2025), Crossplane (Oct 2025), Kyverno (16 Mar 2026), OpenTelemetry (11 May 2026), Buildpacks (17 Jul 2026), KubeVirt (4 Nov 2026). **Checked against the landscape and corrected:** CRI-O graduated in July 2023 (I had first written the 2019 acceptance date); Sigstore/cosign, Trivy, Flagger and Grafana are not CNCF projects.
+
+**Executed locally:** 13 manifests validated with kubeconform on Kubernetes 1.34 against the CRD catalog (12 valid, 1 skipped); OPA 1.22.2 (`opa check --strict`, `opa fmt`, 3 unit tests pass, a mutation makes 2 of 3 fail; older Gatekeeper-style Rego fails under OPA v1 defaults and needs `--v0-compatible`); Kyverno CLI 1.13.4 (`kyverno apply` on 3 pods: 1 pass, 2 fail with exact paths); cosign v2.5.0 (key pair, `sign-blob`, `verify-blob` OK, then a tamper makes it fail); helm 3.16.2 against the real charts (cert-manager renders **0 CRDs unless `crds.enabled=true`**; chart versions read; Cilium, KEDA and Kyverno chart values checked).
+
+**Not executed:** nothing was installed into a cluster (none available; Docker has no daemon; kind is not installed), cosign keyless signing was not run (needs network and an OIDC login), and the Gatekeeper constraint could not be schema-validated without its template.
+
 # ELK deep dive: 10 to 26 minutes (9 Nov 2026)
 
 The ELK Stack from Scratch grew from 26 to 47 scenes: the data path and versions, a tested Filebeat configuration, what Filebeat refuses, Kubernetes autodiscover, the module list, grok on a real access log with its real output, the pipeline that produced it, structured JSON, config validation, Logstash tuning, data streams, the failure store, an ILM policy, search and ES|QL, Kibana, alerting on the pipeline itself, sizing, a security baseline, shipper choices, a 9.1 to 9.5 summary, and a checklist. Reference files and the real outputs are in `examples/elk/`.

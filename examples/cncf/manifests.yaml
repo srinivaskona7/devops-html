@@ -1,0 +1,112 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: { name: require-limits }
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-cpu-memory-limits
+      match: { any: [ { resources: { kinds: [Pod] } } ] }
+      validate:
+        message: "CPU and memory limits are required."
+        pattern: { spec: { containers: [ { resources: { limits: { memory: "?*", cpu: "?*" } } } ] } }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata: { name: guestbook, namespace: argocd }
+spec:
+  project: default
+  source: { repoURL: "https://github.com/argoproj/argocd-example-apps", targetRevision: HEAD, path: guestbook }
+  destination: { server: "https://kubernetes.default.svc", namespace: guestbook }
+  syncPolicy: { automated: { prune: true, selfHeal: true }, syncOptions: [CreateNamespace=true] }
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata: { name: shop, namespace: flux-system }
+spec: { interval: 1m, url: "https://github.com/example/shop-deploy", ref: { branch: main } }
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: { name: shop, namespace: flux-system }
+spec: { interval: 10m, path: ./clusters/prod, prune: true, sourceRef: { kind: GitRepository, name: shop }, wait: true, timeout: 5m }
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata: { name: order-worker, namespace: shop }
+spec:
+  scaleTargetRef: { name: order-worker }
+  minReplicaCount: 0
+  maxReplicaCount: 30
+  triggers:
+    - type: kafka
+      metadata: { bootstrapServers: "kafka:9092", consumerGroup: orders, topic: orders, lagThreshold: "50" }
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata: { name: letsencrypt }
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: platform@example.com
+    privateKeySecretRef: { name: letsencrypt-account }
+    solvers: [ { http01: { gatewayHTTPRoute: { parentRefs: [ { name: shop-gw, namespace: shop, kind: Gateway } ] } } } ]
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata: { name: shop-tls, namespace: shop }
+spec: { secretName: shop-tls, dnsNames: [shop.example.com], issuerRef: { name: letsencrypt, kind: ClusterIssuer } }
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata: { name: shop-gw, namespace: shop }
+spec:
+  gatewayClassName: eg
+  listeners:
+    - { name: https, port: 443, protocol: HTTPS, hostname: shop.example.com, tls: { mode: Terminate, certificateRefs: [ { name: shop-tls } ] }, allowedRoutes: { namespaces: { from: Same } } }
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: { name: api, namespace: shop }
+spec:
+  parentRefs: [ { name: shop-gw } ]
+  hostnames: [shop.example.com]
+  rules: [ { matches: [ { path: { type: PathPrefix, value: /api } } ], backendRefs: [ { name: api, port: 8080 } ] } ]
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata: { name: api-from-frontend, namespace: shop }
+spec:
+  endpointSelector: { matchLabels: { app: api } }
+  ingress: [ { fromEndpoints: [ { matchLabels: { app: frontend } } ], toPorts: [ { ports: [ { port: "8080", protocol: TCP } ] } ] } ]
+---
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata: { name: k8srequiredlabels }
+spec:
+  crd: { spec: { names: { kind: K8sRequiredLabels }, validation: { openAPIV3Schema: { type: object, properties: { labels: { type: array, items: { type: string } } } } } } }
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        violation[{"msg": msg}] {
+          provided := {l | input.review.object.metadata.labels[l]}
+          missing := {l | l := input.parameters.labels[_]} - provided
+          count(missing) > 0
+          msg := sprintf("missing labels: %v", [missing])
+        }
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata: { name: ns-must-have-owner }
+spec: { match: { kinds: [ { apiGroups: [""], kinds: [Namespace] } ] }, parameters: { labels: [owner] } }
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata: { name: bucket-aws }
+spec:
+  compositeTypeRef: { apiVersion: platform.example.org/v1alpha1, kind: XBucket }
+  mode: Pipeline
+  pipeline:
+    - step: render
+      functionRef: { name: function-patch-and-transform }
+      input: { apiVersion: pt.fn.crossplane.io/v1beta1, kind: Resources, resources: [] }
