@@ -2,7 +2,7 @@ module.exports = {
   id: 'shell', title: 'Shell Scripting for DevOps', sub: 'Write safe, reusable Bash scripts, from shebang to production', cat: 'Linux',
   accent: '#4eaa25', icon: 'code', target: 28, keyword: 'BASH', tags: '#bash #shellscripting #devops',
   scenes: [
-    { type: 'hook', title: 'Shell Scripting for DevOps', kicker: 'Bash · 30 minutes', q: 'Which three characters stop most script disasters?',
+    { type: 'hook', title: 'Shell Scripting for DevOps', kicker: 'Bash · 28 minutes', q: 'Which three characters stop most script disasters?',
       n: 'Most automation starts as a few commands you are tired of typing. In ten minutes, we turn those commands into a safe, reusable Bash script, step by step, with every line on screen. And you will learn the three settings that stop most scripting disasters before they happen.' },
     { type: 'roadmap', n: 'Here is the plan: how the shell reads and expands a command, strict mode and its traps, quoting and parameter expansion in depth, arrays, a production backup script built step by step with options, locking and cleanup, testing it with Bats, linting with ShellCheck, portability, and when to switch to Python.' },
     { type: 'step', x: 1, chip: 'Analogy', title: 'A script is a recipe card', icon: 'book',
