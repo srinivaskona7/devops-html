@@ -40,7 +40,7 @@ GLOBAL = {  # flags accepted everywhere by the tool, not always listed on each p
                "--sort-by", "--flatten", "--page-size", "--uri", "--billing-project", "--account", "--log-http", "--configuration"},
     "kubectl": {"--namespace", "--context", "--kubeconfig", "--as", "--as-group", "--server", "--token", "--request-timeout", "--v", "--help"},
     "helm": {"--namespace", "--kube-context", "--kubeconfig", "--debug", "--help"},
-    "docker": {"--help", "--version", "--context", "--host", "--config"},
+    "docker": {"--help", "--version", "--context", "--host", "--config", "--net"},
     "terraform": {"-policies"},  # accepted by plan/apply/query in 1.17 (not listed on every help page)
 }
 
@@ -76,6 +76,7 @@ def help_text(tool, path):
     except Exception:
         res = None
     CACHE[key] = res
+    CACHE_F.parent.mkdir(exist_ok=True); CACHE_F.write_text(json.dumps(CACHE))  # save progress after every lookup
     return res
 
 
@@ -107,6 +108,8 @@ def tokens(cmdline):
     for t in toks:
         if t and t[0] in "|&;<>":
             break  # pipeline / redirect: only inspect the first command
+        if t == "--" and out:
+            break  # everything after a bare "--" is the inner command's own arguments
         out.append(t)
     return out
 
@@ -118,8 +121,10 @@ def check_command(tool, toks):
     for t in rest[:6]:
         if t.startswith("-") or "=" in t or t.startswith(("$", "<", "(", "{", "[", "/", ".", "~", "'", '"')) or t.isdigit():
             break
-        if tool == "aws" and len(path) >= 2:
+        if tool == "aws" and len(path) >= 3:
             break
+        if "/" in t or ":" in t or "." in t:
+            break  # a URI, ARN, file name or similar: an argument, never a subcommand
         path.append(t)
     if not path:
         return "skip", "no subcommand"
@@ -140,6 +145,8 @@ def check_command(tool, toks):
             if re.match(r"^-[a-z][a-z0-9-]*", t) and not t.startswith("--"):
                 flags.append(re.match(r"^(-[a-z][a-z0-9-]*)", t).group(1))
         elif t.startswith("--") and len(t) > 2:
+            if tool == "docker" and "." in t.split("=")[0]:
+                continue  # e.g. --path.rootfs: an argument to the image's program, not to docker
             flags.append(t.split("=")[0])
     missing = []
     for f in flags:
